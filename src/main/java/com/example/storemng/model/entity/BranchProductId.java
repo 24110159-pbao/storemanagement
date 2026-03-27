@@ -5,24 +5,47 @@ import jakarta.persistence.Embeddable;
 import java.io.Serializable;
 import java.util.Objects;
 
+import java.io.Serializable;
+import java.util.Objects;
+import jakarta.persistence.Embeddable;
+
 @Embeddable
 public class BranchProductId implements Serializable {
 
-    private Long branchID;
-    private Long productID;
+    private Integer branchID;
+    private Integer productID;
 
+    // Constructors
     public BranchProductId() {}
 
-    public Long getBranchID() { return branchID; }
-    public Long getProductID() { return productID; }
+    public BranchProductId(Integer branchID, Integer productID) {
+        this.branchID = branchID;
+        this.productID = productID;
+    }
 
-    public void setBranchID(Long branchID) { this.branchID = branchID; }
-    public void setProductID(Long productID) { this.productID = productID; }
+    // Getter và Setter
+    public Integer getBranchID() {
+        return branchID;
+    }
 
+    public void setBranchID(Integer branchID) {
+        this.branchID = branchID;
+    }
+
+    public Integer getProductID() {
+        return productID;
+    }
+
+    public void setProductID(Integer productID) {
+        this.productID = productID;
+    }
+
+    // Equals & HashCode (Bắt buộc cho Composite Key)
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof BranchProductId that)) return false;
+        if (o == null || getClass() != o.getClass()) return false;
+        BranchProductId that = (BranchProductId) o;
         return Objects.equals(branchID, that.branchID) &&
                 Objects.equals(productID, that.productID);
     }
@@ -30,5 +53,14 @@ public class BranchProductId implements Serializable {
     @Override
     public int hashCode() {
         return Objects.hash(branchID, productID);
+    }
+
+    // ToString
+    @Override
+    public String toString() {
+        return "BranchProductId{" +
+                "branchID=" + branchID +
+                ", productID=" + productID +
+                '}';
     }
 }

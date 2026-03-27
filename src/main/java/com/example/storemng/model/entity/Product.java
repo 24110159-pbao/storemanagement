@@ -6,17 +6,17 @@ import java.math.BigDecimal;
 import java.util.*;
 
 @Entity
-@Table(name = "PRODUCT")
+@Table(name = "PRODUCTS")
 public class Product {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long productID;
+    private Integer productID;
 
     @Column(nullable = false)
     private String productName;
 
-    @Column(nullable = false)
+    @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal unitPrice;
 
     private Boolean status;
@@ -25,44 +25,78 @@ public class Product {
     @JoinColumn(name = "CategoryID")
     private Category category;
 
-    @OneToMany(mappedBy = "product", fetch = FetchType.LAZY)
-    private List<Batch> batches = new ArrayList<>();
+    @OneToMany(mappedBy = "product")
+    private List<Batch> batches;
 
-    public Product() {}
+    @OneToMany(mappedBy = "product")
+    private List<BranchProduct> branchProducts;
 
-    public Product(String productName, BigDecimal unitPrice) {
-        this.productName = productName;
-        this.unitPrice = unitPrice;
+    // Getter và Setter
+    public Integer getProductID() {
+        return productID;
     }
 
-    public Long getProductID() { return productID; }
-    public String getProductName() { return productName; }
-    public BigDecimal getUnitPrice() { return unitPrice; }
-    public Boolean getStatus() { return status; }
-    public Category getCategory() { return category; }
-    public List<Batch> getBatches() { return batches; }
+    public void setProductID(Integer productID) {
+        this.productID = productID;
+    }
 
-    public void setProductID(Long productID) { this.productID = productID; }
-    public void setProductName(String productName) { this.productName = productName; }
-    public void setUnitPrice(BigDecimal unitPrice) { this.unitPrice = unitPrice; }
-    public void setStatus(Boolean status) { this.status = status; }
-    public void setCategory(Category category) { this.category = category; }
-    public void setBatches(List<Batch> batches) { this.batches = batches; }
-
-    @Override
-    public String toString() {
+    public String getProductName() {
         return productName;
     }
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof Product that)) return false;
-        return productID != null && productID.equals(that.productID);
+    public void setProductName(String productName) {
+        this.productName = productName;
     }
 
+    public BigDecimal getUnitPrice() {
+        return unitPrice;
+    }
+
+    public void setUnitPrice(BigDecimal unitPrice) {
+        this.unitPrice = unitPrice;
+    }
+
+    public Boolean getStatus() {
+        return status;
+    }
+
+    public void setStatus(Boolean status) {
+        this.status = status;
+    }
+
+    public Category getCategory() {
+        return category;
+    }
+
+    public void setCategory(Category category) {
+        this.category = category;
+    }
+
+    public List<Batch> getBatches() {
+        return batches;
+    }
+
+    public void setBatches(List<Batch> batches) {
+        this.batches = batches;
+    }
+
+    public List<BranchProduct> getBranchProducts() {
+        return branchProducts;
+    }
+
+    public void setBranchProducts(List<BranchProduct> branchProducts) {
+        this.branchProducts = branchProducts;
+    }
+
+    // ToString (Chỉ in các field cơ bản để tránh lỗi đệ quy)
     @Override
-    public int hashCode() {
-        return getClass().hashCode();
+    public String toString() {
+        return "Product{" +
+                "productID=" + productID +
+                ", productName='" + productName + '\'' +
+                ", unitPrice=" + unitPrice +
+                ", status=" + status +
+                ", category=" + (category != null ? category.getCategoryName() : "null") +
+                '}';
     }
 }

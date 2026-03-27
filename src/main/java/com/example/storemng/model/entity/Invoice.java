@@ -5,13 +5,15 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.*;
 
+
+
 @Entity
-@Table(name = "INVOICE")
+@Table(name = "INVOICES")
 public class Invoice {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long invoiceID;
+    private Integer invoiceID;
 
     @ManyToOne
     @JoinColumn(name = "CustomerID")
@@ -29,41 +31,76 @@ public class Invoice {
 
     private BigDecimal totalAmount;
 
-    @OneToMany(mappedBy = "invoice", fetch = FetchType.LAZY)
-    private List<InvoiceDetail> details = new ArrayList<>();
+    @OneToMany(mappedBy = "invoice", cascade = CascadeType.ALL)
+    private List<InvoiceDetail> details;
 
-    public Invoice() {}
+    // Getter và Setter
+    public Integer getInvoiceID() {
+        return invoiceID;
+    }
 
-    public Long getInvoiceID() { return invoiceID; }
-    public Customer getCustomer() { return customer; }
-    public Employee getEmployee() { return employee; }
-    public Branch getBranch() { return branch; }
-    public LocalDate getInvoiceDate() { return invoiceDate; }
-    public BigDecimal getTotalAmount() { return totalAmount; }
-    public List<InvoiceDetail> getDetails() { return details; }
+    public void setInvoiceID(Integer invoiceID) {
+        this.invoiceID = invoiceID;
+    }
 
-    public void setInvoiceID(Long invoiceID) { this.invoiceID = invoiceID; }
-    public void setCustomer(Customer customer) { this.customer = customer; }
-    public void setEmployee(Employee employee) { this.employee = employee; }
-    public void setBranch(Branch branch) { this.branch = branch; }
-    public void setInvoiceDate(LocalDate invoiceDate) { this.invoiceDate = invoiceDate; }
-    public void setTotalAmount(BigDecimal totalAmount) { this.totalAmount = totalAmount; }
-    public void setDetails(List<InvoiceDetail> details) { this.details = details; }
+    public Customer getCustomer() {
+        return customer;
+    }
 
+    public void setCustomer(Customer customer) {
+        this.customer = customer;
+    }
+
+    public Employee getEmployee() {
+        return employee;
+    }
+
+    public void setEmployee(Employee employee) {
+        this.employee = employee;
+    }
+
+    public Branch getBranch() {
+        return branch;
+    }
+
+    public void setBranch(Branch branch) {
+        this.branch = branch;
+    }
+
+    public LocalDate getInvoiceDate() {
+        return invoiceDate;
+    }
+
+    public void setInvoiceDate(LocalDate invoiceDate) {
+        this.invoiceDate = invoiceDate;
+    }
+
+    public BigDecimal getTotalAmount() {
+        return totalAmount;
+    }
+
+    public void setTotalAmount(BigDecimal totalAmount) {
+        this.totalAmount = totalAmount;
+    }
+
+    public List<InvoiceDetail> getDetails() {
+        return details;
+    }
+
+    public void setDetails(List<InvoiceDetail> details) {
+        this.details = details;
+    }
+
+    // ToString
     @Override
     public String toString() {
-        return "Invoice " + invoiceID;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof Invoice that)) return false;
-        return invoiceID != null && invoiceID.equals(that.invoiceID);
-    }
-
-    @Override
-    public int hashCode() {
-        return getClass().hashCode();
+        return "Invoice{" +
+                "invoiceID=" + invoiceID +
+                ", customer=" + (customer != null ? customer.getCustomerName() : "null") +
+                ", employee=" + (employee != null ? employee.getEmployeeName() : "null") +
+                ", branch=" + (branch != null ? branch.getBranchName() : "null") +
+                ", invoiceDate=" + invoiceDate +
+                ", totalAmount=" + totalAmount +
+                '}';
     }
 }

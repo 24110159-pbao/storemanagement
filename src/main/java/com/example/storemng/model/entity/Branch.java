@@ -3,51 +3,96 @@ package com.example.storemng.model.entity;
 import jakarta.persistence.*;
 import java.util.*;
 
+
 @Entity
-@Table(name = "BRANCH")
+@Table(name = "BRANCHES")
 public class Branch {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long branchID;
+    private Integer branchID;
 
     @Column(nullable = false)
     private String branchName;
 
     private String address;
+
     private String phone;
 
     @OneToMany(mappedBy = "branch")
-    private List<Employee> employees = new ArrayList<>();
+    private List<Employee> employees;
 
-    public Branch() {}
+    @OneToMany(mappedBy = "branch")
+    private List<BranchProduct> branchProducts;
 
-    public Long getBranchID() { return branchID; }
-    public String getBranchName() { return branchName; }
-    public String getAddress() { return address; }
-    public String getPhone() { return phone; }
-    public List<Employee> getEmployees() { return employees; }
+    @OneToMany(mappedBy = "branch")
+    private List<Invoice> invoices;
 
-    public void setBranchID(Long branchID) { this.branchID = branchID; }
-    public void setBranchName(String branchName) { this.branchName = branchName; }
-    public void setAddress(String address) { this.address = address; }
-    public void setPhone(String phone) { this.phone = phone; }
-    public void setEmployees(List<Employee> employees) { this.employees = employees; }
+    // Getter và Setter
+    public Integer getBranchID() {
+        return branchID;
+    }
 
-    @Override
-    public String toString() {
+    public void setBranchID(Integer branchID) {
+        this.branchID = branchID;
+    }
+
+    public String getBranchName() {
         return branchName;
     }
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof Branch that)) return false;
-        return branchID != null && branchID.equals(that.branchID);
+    public void setBranchName(String branchName) {
+        this.branchName = branchName;
     }
 
+    public String getAddress() {
+        return address;
+    }
+
+    public void setAddress(String address) {
+        this.address = address;
+    }
+
+    public String getPhone() {
+        return phone;
+    }
+
+    public void setPhone(String phone) {
+        this.phone = phone;
+    }
+
+    public List<Employee> getEmployees() {
+        return employees;
+    }
+
+    public void setEmployees(List<Employee> employees) {
+        this.employees = employees;
+    }
+
+    public List<BranchProduct> getBranchProducts() {
+        return branchProducts;
+    }
+
+    public void setBranchProducts(List<BranchProduct> branchProducts) {
+        this.branchProducts = branchProducts;
+    }
+
+    public List<Invoice> getInvoices() {
+        return invoices;
+    }
+
+    public void setInvoices(List<Invoice> invoices) {
+        this.invoices = invoices;
+    }
+
+    // ToString (Loại bỏ các List để đảm bảo hiệu năng và tránh lỗi đệ quy)
     @Override
-    public int hashCode() {
-        return getClass().hashCode();
+    public String toString() {
+        return "Branch{" +
+                "branchID=" + branchID +
+                ", branchName='" + branchName + '\'' +
+                ", address='" + address + '\'' +
+                ", phone='" + phone + '\'' +
+                '}';
     }
 }

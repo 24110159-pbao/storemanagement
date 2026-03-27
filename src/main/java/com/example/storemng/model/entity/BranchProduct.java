@@ -3,8 +3,10 @@ package com.example.storemng.model.entity;
 
 import jakarta.persistence.*;
 
+import jakarta.persistence.*;
+
 @Entity
-@Table(name = "BRANCH_PRODUCT")
+@Table(name = "BRANCH_PRODUCTS")
 public class BranchProduct {
 
     @EmbeddedId
@@ -22,20 +24,47 @@ public class BranchProduct {
 
     private Integer quantity;
 
-    public BranchProduct() {}
+    // Getter và Setter
+    public BranchProductId getId() {
+        return id;
+    }
 
-    public BranchProductId getId() { return id; }
-    public Branch getBranch() { return branch; }
-    public Product getProduct() { return product; }
-    public Integer getQuantity() { return quantity; }
+    public void setId(BranchProductId id) {
+        this.id = id;
+    }
 
-    public void setId(BranchProductId id) { this.id = id; }
-    public void setBranch(Branch branch) { this.branch = branch; }
-    public void setProduct(Product product) { this.product = product; }
-    public void setQuantity(Integer quantity) { this.quantity = quantity; }
+    public Branch getBranch() {
+        return branch;
+    }
 
+    public void setBranch(Branch branch) {
+        this.branch = branch;
+    }
+
+    public Product getProduct() {
+        return product;
+    }
+
+    public void setProduct(Product product) {
+        this.product = product;
+    }
+
+    public Integer getQuantity() {
+        return quantity;
+    }
+
+    public void setQuantity(Integer quantity) {
+        this.quantity = quantity;
+    }
+
+    // ToString
     @Override
     public String toString() {
-        return "BranchProduct";
+        return "BranchProduct{" +
+                "id=" + id +
+                ", branch=" + (branch != null ? branch.getBranchName() : "null") +
+                ", product=" + (product != null ? product.getProductName() : "null") +
+                ", quantity=" + quantity +
+                '}';
     }
 }

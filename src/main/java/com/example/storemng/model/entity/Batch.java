@@ -5,13 +5,15 @@ import jakarta.persistence.*;
 import java.time.LocalDate;
 import java.util.Objects;
 
+
+
 @Entity
-@Table(name = "BATCH")
+@Table(name = "BATCHES")
 public class Batch {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long batchID;
+    private Integer batchID;
 
     @ManyToOne
     @JoinColumn(name = "ProductID", nullable = false)
@@ -25,34 +27,56 @@ public class Batch {
 
     private Integer quantity;
 
-    public Batch() {}
+    // Getter và Setter
+    public Integer getBatchID() {
+        return batchID;
+    }
 
-    public Long getBatchID() { return batchID; }
-    public Product getProduct() { return product; }
-    public Supplier getSupplier() { return supplier; }
-    public LocalDate getImportDate() { return importDate; }
-    public Integer getQuantity() { return quantity; }
+    public void setBatchID(Integer batchID) {
+        this.batchID = batchID;
+    }
 
-    public void setBatchID(Long batchID) { this.batchID = batchID; }
-    public void setProduct(Product product) { this.product = product; }
-    public void setSupplier(Supplier supplier) { this.supplier = supplier; }
-    public void setImportDate(LocalDate importDate) { this.importDate = importDate; }
-    public void setQuantity(Integer quantity) { this.quantity = quantity; }
+    public Product getProduct() {
+        return product;
+    }
 
+    public void setProduct(Product product) {
+        this.product = product;
+    }
+
+    public Supplier getSupplier() {
+        return supplier;
+    }
+
+    public void setSupplier(Supplier supplier) {
+        this.supplier = supplier;
+    }
+
+    public LocalDate getImportDate() {
+        return importDate;
+    }
+
+    public void setImportDate(LocalDate importDate) {
+        this.importDate = importDate;
+    }
+
+    public Integer getQuantity() {
+        return quantity;
+    }
+
+    public void setQuantity(Integer quantity) {
+        this.quantity = quantity;
+    }
+
+    // ToString
     @Override
     public String toString() {
-        return "Batch " + batchID;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof Batch that)) return false;
-        return batchID != null && batchID.equals(that.batchID);
-    }
-
-    @Override
-    public int hashCode() {
-        return getClass().hashCode();
+        return "Batch{" +
+                "batchID=" + batchID +
+                ", product=" + (product != null ? product.getProductName() : "null") +
+                ", supplier=" + (supplier != null ? supplier.getSupplierName() : "null") +
+                ", importDate=" + importDate +
+                ", quantity=" + quantity +
+                '}';
     }
 }

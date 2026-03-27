@@ -3,8 +3,11 @@ package com.example.storemng.model.entity;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
 
+import jakarta.persistence.*;
+import java.math.BigDecimal;
+
 @Entity
-@Table(name = "INVOICE_DETAIL")
+@Table(name = "INVOICE_DETAILS")
 public class InvoiceDetail {
 
     @EmbeddedId
@@ -26,22 +29,55 @@ public class InvoiceDetail {
     @Column(nullable = false)
     private BigDecimal unitPrice;
 
-    public InvoiceDetail() {}
+    // Getter và Setter
+    public InvoiceDetailId getId() {
+        return id;
+    }
 
-    public InvoiceDetailId getId() { return id; }
-    public Invoice getInvoice() { return invoice; }
-    public Product getProduct() { return product; }
-    public Integer getQuantity() { return quantity; }
-    public BigDecimal getUnitPrice() { return unitPrice; }
+    public void setId(InvoiceDetailId id) {
+        this.id = id;
+    }
 
-    public void setId(InvoiceDetailId id) { this.id = id; }
-    public void setInvoice(Invoice invoice) { this.invoice = invoice; }
-    public void setProduct(Product product) { this.product = product; }
-    public void setQuantity(Integer quantity) { this.quantity = quantity; }
-    public void setUnitPrice(BigDecimal unitPrice) { this.unitPrice = unitPrice; }
+    public Invoice getInvoice() {
+        return invoice;
+    }
 
+    public void setInvoice(Invoice invoice) {
+        this.invoice = invoice;
+    }
+
+    public Product getProduct() {
+        return product;
+    }
+
+    public void setProduct(Product product) {
+        this.product = product;
+    }
+
+    public Integer getQuantity() {
+        return quantity;
+    }
+
+    public void setQuantity(Integer quantity) {
+        this.quantity = quantity;
+    }
+
+    public BigDecimal getUnitPrice() {
+        return unitPrice;
+    }
+
+    public void setUnitPrice(BigDecimal unitPrice) {
+        this.unitPrice = unitPrice;
+    }
+
+    // ToString
     @Override
     public String toString() {
-        return "InvoiceDetail";
+        return "InvoiceDetail{" +
+                "id=" + id +
+                ", product=" + (product != null ? product.getProductName() : "null") +
+                ", quantity=" + quantity +
+                ", unitPrice=" + unitPrice +
+                '}';
     }
 }

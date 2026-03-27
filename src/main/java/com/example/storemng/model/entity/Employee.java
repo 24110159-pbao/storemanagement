@@ -4,13 +4,17 @@ import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.util.*;
 
+import jakarta.persistence.*;
+import java.math.BigDecimal;
+import java.util.List;
+
 @Entity
-@Table(name = "EMPLOYEE")
+@Table(name = "EMPLOYEES")
 public class Employee {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long employeeID;
+    private Integer employeeID;
 
     @Column(nullable = false)
     private String employeeName;
@@ -23,39 +27,67 @@ public class Employee {
     @JoinColumn(name = "BranchID")
     private Branch branch;
 
-    @OneToMany(mappedBy = "employee", fetch = FetchType.LAZY)
-    private List<Invoice> invoices = new ArrayList<>();
+    @OneToMany(mappedBy = "employee")
+    private List<Invoice> invoices;
 
-    public Employee() {}
+    // Getter và Setter
+    public Integer getEmployeeID() {
+        return employeeID;
+    }
 
-    public Long getEmployeeID() { return employeeID; }
-    public String getEmployeeName() { return employeeName; }
-    public String getPosition() { return position; }
-    public BigDecimal getSalary() { return salary; }
-    public Branch getBranch() { return branch; }
-    public List<Invoice> getInvoices() { return invoices; }
+    public void setEmployeeID(Integer employeeID) {
+        this.employeeID = employeeID;
+    }
 
-    public void setEmployeeID(Long employeeID) { this.employeeID = employeeID; }
-    public void setEmployeeName(String employeeName) { this.employeeName = employeeName; }
-    public void setPosition(String position) { this.position = position; }
-    public void setSalary(BigDecimal salary) { this.salary = salary; }
-    public void setBranch(Branch branch) { this.branch = branch; }
-    public void setInvoices(List<Invoice> invoices) { this.invoices = invoices; }
-
-    @Override
-    public String toString() {
+    public String getEmployeeName() {
         return employeeName;
     }
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof Employee that)) return false;
-        return employeeID != null && employeeID.equals(that.employeeID);
+    public void setEmployeeName(String employeeName) {
+        this.employeeName = employeeName;
     }
 
+    public String getPosition() {
+        return position;
+    }
+
+    public void setPosition(String position) {
+        this.position = position;
+    }
+
+    public BigDecimal getSalary() {
+        return salary;
+    }
+
+    public void setSalary(BigDecimal salary) {
+        this.salary = salary;
+    }
+
+    public Branch getBranch() {
+        return branch;
+    }
+
+    public void setBranch(Branch branch) {
+        this.branch = branch;
+    }
+
+    public List<Invoice> getInvoices() {
+        return invoices;
+    }
+
+    public void setInvoices(List<Invoice> invoices) {
+        this.invoices = invoices;
+    }
+
+    // ToString
     @Override
-    public int hashCode() {
-        return getClass().hashCode();
+    public String toString() {
+        return "Employee{" +
+                "employeeID=" + employeeID +
+                ", employeeName='" + employeeName + '\'' +
+                ", position='" + position + '\'' +
+                ", salary=" + salary +
+                ", branch=" + (branch != null ? branch.getBranchName() : "null") +
+                '}';
     }
 }

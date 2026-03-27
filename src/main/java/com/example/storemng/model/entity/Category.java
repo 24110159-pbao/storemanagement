@@ -4,47 +4,50 @@ import jakarta.persistence.*;
 import java.util.*;
 
 @Entity
-@Table(name = "CATEGORY")
+@Table(name = "CATEGORIES")
 public class Category {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long categoryID;
+    private Integer categoryID;
 
     @Column(nullable = false)
     private String categoryName;
 
-    @OneToMany(mappedBy = "category", fetch = FetchType.LAZY)
-    private List<Product> products = new ArrayList<>();
+    @OneToMany(mappedBy = "category")
+    private List<Product> products;
 
-    public Category() {}
-
-    public Category(String categoryName) {
-        this.categoryName = categoryName;
+    // Getter và Setter
+    public Integer getCategoryID() {
+        return categoryID;
     }
 
-    public Long getCategoryID() { return categoryID; }
-    public String getCategoryName() { return categoryName; }
-    public List<Product> getProducts() { return products; }
+    public void setCategoryID(Integer categoryID) {
+        this.categoryID = categoryID;
+    }
 
-    public void setCategoryID(Long categoryID) { this.categoryID = categoryID; }
-    public void setCategoryName(String categoryName) { this.categoryName = categoryName; }
-    public void setProducts(List<Product> products) { this.products = products; }
-
-    @Override
-    public String toString() {
+    public String getCategoryName() {
         return categoryName;
     }
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof Category that)) return false;
-        return categoryID != null && categoryID.equals(that.categoryID);
+    public void setCategoryName(String categoryName) {
+        this.categoryName = categoryName;
     }
 
+    public List<Product> getProducts() {
+        return products;
+    }
+
+    public void setProducts(List<Product> products) {
+        this.products = products;
+    }
+
+    // ToString
     @Override
-    public int hashCode() {
-        return getClass().hashCode();
+    public String toString() {
+        return "Category{" +
+                "categoryID=" + categoryID +
+                ", categoryName='" + categoryName + '\'' +
+                '}';
     }
 }
