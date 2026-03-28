@@ -10,7 +10,7 @@ public class BranchController {
 
     private BranchService service = new BranchServiceImpl();
 
-    public List<Branch> getAllBranches() {
+    public List<Branch> getAll() {
         return service.getAll();
     }
 

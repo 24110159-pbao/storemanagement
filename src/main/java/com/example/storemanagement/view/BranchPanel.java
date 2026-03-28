@@ -110,7 +110,7 @@ public class BranchPanel extends JPanel {
 
     private void loadData() {
         model.setRowCount(0);
-        List<Branch> list = controller.getAllBranches();
+        List<Branch> list = controller.getAll();
 
         for (Branch b : list) {
             model.addRow(new Object[]{

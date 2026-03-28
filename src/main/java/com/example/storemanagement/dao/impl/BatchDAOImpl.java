@@ -12,7 +12,9 @@ public class BatchDAOImpl implements BatchDAO {
     @Override
     public List<Batch> findAll() {
         EntityManager em = JpaUtil.getEntityManager();
-        return em.createQuery("FROM Batch", Batch.class).getResultList();
+        List<Batch> list = em.createQuery("FROM Batch", Batch.class).getResultList();
+        em.close();
+        return list;
     }
 
     @Override
@@ -41,11 +43,5 @@ public class BatchDAOImpl implements BatchDAO {
         if (b != null) em.remove(b);
         em.getTransaction().commit();
         em.close();
-    }
-
-    @Override
-    public Batch findById(int id) {
-        EntityManager em = JpaUtil.getEntityManager();
-        return em.find(Batch.class, id);
     }
 }

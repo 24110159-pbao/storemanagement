@@ -1,7 +1,9 @@
 package com.example.storemanagement.view;
 
 import com.example.storemanagement.controller.BatchController;
-import com.example.storemanagement.dao.impl.*;
+import com.example.storemanagement.controller.ProductController;
+import com.example.storemanagement.controller.SupplierController;
+import com.example.storemanagement.controller.BranchController;
 import com.example.storemanagement.model.entity.*;
 
 import javax.swing.*;
@@ -12,192 +14,241 @@ import java.util.List;
 
 public class BatchPanel extends JPanel {
 
-    private JTable table;
-    private DefaultTableModel model;
+    private JTable tableBatch, tableProduct;
+    private DefaultTableModel modelBatch, modelProduct;
 
-    private JTextField txtId, txtQuantity;
-
-    private JComboBox<Product> cbProduct;
-    private JComboBox<Supplier> cbSupplier;
     private JComboBox<Branch> cbBranch;
+    private JComboBox<Supplier> cbSupplier;
+
+    private JTextField txtQuantity, txtSearch;
 
     private BatchController controller = new BatchController();
+    private ProductController productController = new ProductController();
+    private SupplierController supplierController = new SupplierController();
+    private BranchController branchController = new BranchController();
+
+    private Product selectedProduct;
 
     public BatchPanel() {
         setLayout(new BorderLayout());
 
-        // ===== FORM =====
-        JPanel form = new JPanel(new GridLayout(5, 2, 5, 5));
+        // ===== TOP FORM =====
+        JPanel top = new JPanel(new GridLayout(3, 2, 5, 5));
 
-        txtId = new JTextField();
-        txtId.setEnabled(false);
-
+        cbBranch = new JComboBox<>();
+        cbSupplier = new JComboBox<>();
         txtQuantity = new JTextField();
 
-        cbProduct = new JComboBox<>();
-        cbSupplier = new JComboBox<>();
-        cbBranch = new JComboBox<>();
+        top.add(new JLabel("Branch:"));
+        top.add(cbBranch);
 
-        form.add(new JLabel("ID:"));
-        form.add(txtId);
+        top.add(new JLabel("Supplier:"));
+        top.add(cbSupplier);
 
-        form.add(new JLabel("Product:"));
-        form.add(cbProduct);
+        top.add(new JLabel("Quantity:"));
+        top.add(txtQuantity);
 
-        form.add(new JLabel("Supplier:"));
-        form.add(cbSupplier);
+        add(top, BorderLayout.NORTH);
 
-        form.add(new JLabel("Branch:"));
-        form.add(cbBranch);
+        // ===== CENTER SPLIT =====
+        JSplitPane split = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
 
-        form.add(new JLabel("Quantity:"));
-        form.add(txtQuantity);
-
-        add(form, BorderLayout.NORTH);
-
-        // ===== TABLE =====
-        model = new DefaultTableModel(
-                new String[]{"ID", "Product", "Supplier", "Date", "Qty"}, 0
+        // ===== BATCH TABLE =====
+        modelBatch = new DefaultTableModel(
+                new String[]{"ID", "Product", "Supplier", "Branch", "Date", "Qty"}, 0
         ) {
-            public boolean isCellEditable(int r, int c) { return false; }
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return false;
+            }
         };
 
-        table = new JTable(model);
-        table.setRowSelectionAllowed(true);
-        table.setColumnSelectionAllowed(false);
-        table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        add(new JScrollPane(table), BorderLayout.CENTER);
+        tableBatch = new JTable(modelBatch);
+        tableBatch.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        tableBatch.setRowSelectionAllowed(true);
+        tableBatch.setColumnSelectionAllowed(false);
+
+        split.setTopComponent(new JScrollPane(tableBatch));
+
+        // ===== PRODUCT TABLE =====
+        JPanel productPanel = new JPanel(new BorderLayout());
+
+        txtSearch = new JTextField();
+        JButton btnSearch = new JButton("Search");
+
+        JPanel searchPanel = new JPanel(new BorderLayout());
+        searchPanel.add(txtSearch, BorderLayout.CENTER);
+        searchPanel.add(btnSearch, BorderLayout.EAST);
+
+        productPanel.add(searchPanel, BorderLayout.NORTH);
+
+        modelProduct = new DefaultTableModel(
+                new String[]{"ID", "Name", "Price"}, 0
+        ) {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return false;
+            }
+        };
+
+        tableProduct = new JTable(modelProduct);
+        tableProduct.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        tableProduct.setRowSelectionAllowed(true);
+        tableProduct.setColumnSelectionAllowed(false);
+
+        productPanel.add(new JScrollPane(tableProduct), BorderLayout.CENTER);
+
+        split.setBottomComponent(productPanel);
+        split.setDividerLocation(250);
+
+        add(split, BorderLayout.CENTER);
 
         // ===== BUTTON =====
-        JPanel btns = new JPanel();
+        JPanel buttons = new JPanel();
 
         JButton btnAdd = new JButton("Add");
-        JButton btnUpdate = new JButton("Update");
         JButton btnDelete = new JButton("Delete");
-        JButton btnClear = new JButton("Clear");
 
-        btns.add(btnAdd);
-        btns.add(btnUpdate);
-        btns.add(btnDelete);
-        btns.add(btnClear);
+        buttons.add(btnAdd);
+        buttons.add(btnDelete);
 
-        add(btns, BorderLayout.SOUTH);
+        add(buttons, BorderLayout.SOUTH);
 
         // ===== LOAD DATA =====
+        loadBatch();
+        loadProduct();
         loadCombo();
-        loadData();
 
         // ===== EVENTS =====
-        table.getSelectionModel().addListSelectionListener(e -> fillForm());
 
+        // chọn product
+        tableProduct.getSelectionModel().addListSelectionListener(e -> {
+            int row = tableProduct.getSelectedRow();
+            if (row >= 0) {
+                int id = (int) modelProduct.getValueAt(row, 0);
+                selectedProduct = productController.findById(id);
+            }
+        });
+
+        // search
+        btnSearch.addActionListener(e -> searchProduct());
+
+        // add
         btnAdd.addActionListener(e -> {
 
-            if (cbProduct.getSelectedItem() == null ||
-                    cbSupplier.getSelectedItem() == null ||
-                    cbBranch.getSelectedItem() == null ||
-                    txtQuantity.getText().isEmpty()) {
-
-                JOptionPane.showMessageDialog(this, "Please fill all fields!");
+            if (selectedProduct == null) {
+                JOptionPane.showMessageDialog(this, "Vui lòng chọn sản phẩm!");
                 return;
             }
 
-            int qty = Integer.parseInt(txtQuantity.getText());
+            if (cbSupplier.getSelectedItem() == null) {
+                JOptionPane.showMessageDialog(this, "Vui lòng chọn nhà cung cấp!");
+                return;
+            }
+
+            if (cbBranch.getSelectedItem() == null) {
+                JOptionPane.showMessageDialog(this, "Vui lòng chọn chi nhánh!");
+                return;
+            }
+
+            if (txtQuantity.getText().trim().isEmpty()) {
+                JOptionPane.showMessageDialog(this, "Vui lòng nhập số lượng!");
+                return;
+            }
+
+            int quantity;
+            try {
+                quantity = Integer.parseInt(txtQuantity.getText());
+                if (quantity <= 0) {
+                    JOptionPane.showMessageDialog(this, "Số lượng phải > 0!");
+                    return;
+                }
+            } catch (NumberFormatException ex) {
+                JOptionPane.showMessageDialog(this, "Số lượng phải là số!");
+                return;
+            }
 
             controller.add(
-                    (Product) cbProduct.getSelectedItem(),
+                    selectedProduct,
                     (Supplier) cbSupplier.getSelectedItem(),
-                    (Branch) cbBranch.getSelectedItem(), // 👉 dùng riêng cho branch_product
+                    (Branch) cbBranch.getSelectedItem(),
                     new Date(),
-                    qty
+                    quantity
             );
 
-            loadData();
-            clear();
+            JOptionPane.showMessageDialog(this, "Thêm thành công!");
+
+            loadBatch();
+
+            // reset form
+            txtQuantity.setText("");
+            tableProduct.clearSelection();
+            selectedProduct = null;
         });
 
-        btnUpdate.addActionListener(e -> {
-            if (txtId.getText().isEmpty()) return;
-
-            controller.update(
-                    Integer.parseInt(txtId.getText()),
-                    (Product) cbProduct.getSelectedItem(),
-                    (Supplier) cbSupplier.getSelectedItem(),
-                    new Date(),
-                    Integer.parseInt(txtQuantity.getText())
-            );
-            loadData();
-        });
-
+        // delete
         btnDelete.addActionListener(e -> {
-
-            if (txtId.getText().isEmpty()) return;
-
-            controller.delete(
-                    Integer.parseInt(txtId.getText()),
-                    (Branch) cbBranch.getSelectedItem() // 👉 truyền branch
-            );
-
-            loadData();
-            clear();
+            int row = tableBatch.getSelectedRow();
+            if (row >= 0) {
+                int id = (int) modelBatch.getValueAt(row, 0);
+                controller.delete(id);
+                loadBatch();
+            }
         });
-
-        btnClear.addActionListener(e -> clear());
     }
 
-    // ===== LOAD COMBO =====
-    private void loadCombo() {
-        ProductDAOImpl pDao = new ProductDAOImpl();
-        SupplierDAOImpl sDao = new SupplierDAOImpl();
-        BranchDAOImpl bDao = new BranchDAOImpl();
-
-        cbProduct.setSelectedIndex(-1);
-        cbSupplier.setSelectedIndex(-1);
-        cbBranch.setSelectedIndex(-1);
-        cbProduct.removeAllItems();
-        cbSupplier.removeAllItems();
-        cbBranch.removeAllItems();
-
-        for (Product p : pDao.findAll()) {
-            cbProduct.addItem(p);
-        }
-
-        for (Supplier s : sDao.findAll()) {
-            cbSupplier.addItem(s);
-        }
-
-        for (Branch b : bDao.findAll()) {
-            cbBranch.addItem(b);
-        }
-
-    }
-
-    // ===== LOAD TABLE =====
-    private void loadData() {
-        model.setRowCount(0);
+    private void loadBatch() {
+        modelBatch.setRowCount(0);
         List<Batch> list = controller.getAll();
 
         for (Batch b : list) {
-            model.addRow(new Object[]{
+            modelBatch.addRow(new Object[]{
                     b.getBatchID(),
                     b.getProduct().getProductName(),
                     b.getSupplier().getSupplierName(),
+                    b.getBranch().getBranchName(),
                     b.getImportDate(),
                     b.getQuantity()
             });
         }
     }
 
-    private void fillForm() {
-        int row = table.getSelectedRow();
-        if (row >= 0) {
-            txtId.setText(model.getValueAt(row, 0).toString());
-            txtQuantity.setText(model.getValueAt(row, 4).toString());
+    private void loadProduct() {
+        modelProduct.setRowCount(0);
+        List<Product> list = productController.getAll();
+
+        for (Product p : list) {
+            modelProduct.addRow(new Object[]{
+                    p.getProductID(),
+                    p.getProductName(),
+                    p.getUnitPrice()
+            });
         }
     }
 
-    private void clear() {
-        txtId.setText("");
-        txtQuantity.setText("");
-        table.clearSelection();
+    private void loadCombo() {
+        for (Supplier s : supplierController.getAllSuppliers()) {
+            cbSupplier.addItem(s);
+        }
+
+        for (Branch b : branchController.getAll()) {
+            cbBranch.addItem(b);
+        }
+    }
+
+    private void searchProduct() {
+        String keyword = txtSearch.getText();
+
+        modelProduct.setRowCount(0);
+        List<Product> list = productController.search(keyword);
+
+        for (Product p : list) {
+            modelProduct.addRow(new Object[]{
+                    p.getProductID(),
+                    p.getProductName(),
+                    p.getUnitPrice()
+            });
+        }
     }
 }
+

@@ -4,6 +4,7 @@ import com.example.storemanagement.dao.ProductDAO;
 import com.example.storemanagement.dao.CategoryDAO;
 import com.example.storemanagement.dao.impl.ProductDAOImpl;
 import com.example.storemanagement.dao.impl.CategoryDAOImpl;
+import com.example.storemanagement.model.dto.ProductStockDTO;
 import com.example.storemanagement.model.entity.Product;
 import com.example.storemanagement.model.entity.Category;
 import com.example.storemanagement.service.ProductService;
@@ -15,6 +16,7 @@ public class ProductServiceImpl implements ProductService {
 
     private ProductDAO productDAO = new ProductDAOImpl();
     private CategoryDAO categoryDAO = new CategoryDAOImpl();
+
 
     @Override
     public List<Product> getAll() {
@@ -50,5 +52,19 @@ public class ProductServiceImpl implements ProductService {
     @Override
     public void delete(int id) {
         productDAO.delete(id);
+    }
+
+    @Override
+    public Product findById(int id) {
+        return productDAO.findById(id);
+    }
+
+    @Override
+    public List<Product> search(String keyword) {
+        return productDAO.search(keyword);
+    }
+    @Override
+    public List<ProductStockDTO> getProductStockByBranch(Integer branchId) {
+        return productDAO.getProductStockByBranch(branchId);
     }
 }

@@ -8,6 +8,4 @@ public interface BatchDAO {
     void save(Batch batch);
     void update(Batch batch);
     void delete(int id);
-    Batch findById(int id);
-
 }

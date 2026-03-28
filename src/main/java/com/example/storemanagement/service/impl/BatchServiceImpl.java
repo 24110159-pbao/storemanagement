@@ -30,9 +30,4 @@ public class BatchServiceImpl implements BatchService {
     public void delete(int id) {
         dao.delete(id);
     }
-
-    @Override
-    public Batch getById(int id) {
-        return dao.findById(id);
-    }
 }

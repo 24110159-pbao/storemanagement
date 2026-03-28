@@ -2,9 +2,12 @@ package com.example.storemanagement.dao.impl;
 
 import com.example.storemanagement.config.JpaUtil;
 import com.example.storemanagement.dao.ProductDAO;
+import com.example.storemanagement.model.dto.ProductStockDTO;
 import com.example.storemanagement.model.entity.Product;
 
 import jakarta.persistence.EntityManager;
+import jakarta.persistence.TypedQuery;
+
 import java.util.List;
 
 public class ProductDAOImpl implements ProductDAO {
@@ -44,5 +47,44 @@ public class ProductDAOImpl implements ProductDAO {
     public Product findById(int id) {
         EntityManager em = JpaUtil.getEntityManager();
         return em.find(Product.class, id);
+    }
+    @Override
+    public List<Product> search(String keyword) {
+        EntityManager em = JpaUtil.getEntityManager();
+        List<Product> list = em.createQuery(
+                        "FROM Product p WHERE p.productName LIKE :kw", Product.class)
+                .setParameter("kw", "%" + keyword + "%")
+                .getResultList();
+        em.close();
+        return list;
+    }
+    @Override
+    public List<ProductStockDTO> getProductStockByBranch(Integer branchId) {
+        EntityManager em = JpaUtil.getEntityManager();
+        List<ProductStockDTO> list;
+
+        try {
+            String jpql = "SELECT new com.example.storemanagement.model.dto.ProductStockDTO(" +
+                    "p.productID, p.productName, p.unitPrice, COALESCE(SUM(b.quantity),0)) " +
+                    "FROM Product p LEFT JOIN Batch b ON p.productID = b.product.productID ";
+
+            if (branchId != null) {
+                jpql += "WHERE b.branch.branchID = :branchId ";
+            }
+
+            jpql += "GROUP BY p.productID, p.productName, p.unitPrice";
+
+            TypedQuery<ProductStockDTO> query = em.createQuery(jpql, ProductStockDTO.class);
+
+            if (branchId != null) {
+                query.setParameter("branchId", branchId);
+            }
+
+            list = query.getResultList();
+        } finally {
+            em.close();
+        }
+
+        return list;
     }
 }

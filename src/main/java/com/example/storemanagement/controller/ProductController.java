@@ -1,5 +1,6 @@
 package com.example.storemanagement.controller;
 
+import com.example.storemanagement.model.dto.ProductStockDTO;
 import com.example.storemanagement.model.entity.Product;
 import com.example.storemanagement.service.ProductService;
 import com.example.storemanagement.service.impl.ProductServiceImpl;
@@ -24,5 +25,18 @@ public class ProductController {
 
     public void delete(int id) {
         service.delete(id);
+    }
+
+    public Product findById(int id) {
+        return service.findById(id);
+    }
+
+    public List<Product> search(String keyword) {
+        return service.search(keyword);
+    }
+
+    public List<ProductStockDTO> getProductStockByBranch(Integer branchId) {
+
+        return service.getProductStockByBranch(branchId);
     }
 }

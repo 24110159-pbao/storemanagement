@@ -2,6 +2,8 @@ package com.example.storemanagement.model.entity;
 
 import jakarta.persistence.*;
 
+import java.util.List;
+
 @Entity
 @Table(name = "BRANCHES")
 public class Branch {
@@ -19,6 +21,18 @@ public class Branch {
 
     @Column(name = "Phone")
     private String phone;
+
+    // Quan hệ 1 - N với Employee
+    @OneToMany(mappedBy = "branch")
+    private List<Employee> employees;
+
+    // Quan hệ 1 - N với Batch
+    @OneToMany(mappedBy = "branch")
+    private List<Batch> batches;
+
+    // Quan hệ 1 - N với Invoice
+    @OneToMany(mappedBy = "branch")
+    private List<Invoice> invoices;
 
     public Branch() {}
 

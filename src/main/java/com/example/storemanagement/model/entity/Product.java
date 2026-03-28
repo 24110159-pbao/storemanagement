@@ -35,9 +35,7 @@ public class Product {
     @OneToMany(mappedBy = "product")
     private List<InvoiceDetail> invoiceDetails;
 
-    // ===== MANY TO MANY qua BranchProduct =====
-    @OneToMany(mappedBy = "product")
-    private List<BranchProduct> branchProducts;
+
 
     // ===== CONSTRUCTOR =====
     public Product() {
@@ -100,14 +98,8 @@ public class Product {
         this.invoiceDetails = invoiceDetails;
     }
 
-    public List<BranchProduct> getBranchProducts() {
-        return branchProducts;
-    }
-
-    public void setBranchProducts(List<BranchProduct> branchProducts) {
-        this.branchProducts = branchProducts;
-    }
     @Override
+
     public String toString() {
         return productName;
     }

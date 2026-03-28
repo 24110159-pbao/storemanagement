@@ -112,7 +112,7 @@ public class EmployeePanel extends JPanel {
         Branch selected = (Branch) cbBranch.getSelectedItem(); // giữ lại lựa chọn
         cbBranch.removeAllItems();
 
-        List<Branch> branches = branchController.getAllBranches();
+        List<Branch> branches = branchController.getAll();
         for (Branch b : branches) {
             cbBranch.addItem(b);
         }
