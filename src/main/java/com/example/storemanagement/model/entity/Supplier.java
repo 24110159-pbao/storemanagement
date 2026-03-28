@@ -41,11 +41,6 @@ public class Supplier {
     // 4. toString (Hỗ trợ debug/in dữ liệu)
     @Override
     public String toString() {
-        return "Supplier{" +
-                "supplierID=" + supplierID +
-                ", supplierName='" + supplierName + '\'' +
-                ", address='" + address + '\'' +
-                ", phone='" + phone + '\'' +
-                '}';
+        return supplierName;
     }
 }

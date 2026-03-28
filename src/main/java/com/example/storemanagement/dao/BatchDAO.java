@@ -1,4 +1,13 @@
 package com.example.storemanagement.dao;
 
-public class BatchDAO {
+import com.example.storemanagement.model.entity.Batch;
+import java.util.List;
+
+public interface BatchDAO {
+    List<Batch> findAll();
+    void save(Batch batch);
+    void update(Batch batch);
+    void delete(int id);
+    Batch findById(int id);
+
 }

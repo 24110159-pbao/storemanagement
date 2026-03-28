@@ -73,7 +73,7 @@ public class MainFrame extends JFrame {
         contentPanel.add(new ProductPanel(), "PRODUCT");
         contentPanel.add(new BranchPanel(), "BRANCH");
         contentPanel.add(new JLabel("Branch Allocation Panel"), "BRANCH_ALLOCATION");
-        contentPanel.add(new JLabel("Batch Panel"), "BATCH");
+        contentPanel.add(new BatchPanel(), "BATCH");
         contentPanel.add(new JLabel("Create Invoice Panel"), "CREATE_INVOICE");
         contentPanel.add(new JLabel("Statistics Panel"), "STATISTICS");
         contentPanel.add(new JLabel("Option Panel"), "OPTION");

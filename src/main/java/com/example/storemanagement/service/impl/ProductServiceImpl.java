@@ -29,7 +29,6 @@ public class ProductServiceImpl implements ProductService {
         p.setProductName(name);
         p.setUnitPrice(BigDecimal.valueOf(price));
         p.setCategory(c);
-        p.setStatus(false);
 
         productDAO.save(p);
     }

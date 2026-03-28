@@ -21,8 +21,6 @@ public class Product {
     @Column(name = "UnitPrice", nullable = false)
     private BigDecimal unitPrice;
 
-    @Column(name = "Status")
-    private boolean status;
 
     // ===== MANY TO ONE -> CATEGORY =====
     @ManyToOne
@@ -45,10 +43,9 @@ public class Product {
     public Product() {
     }
 
-    public Product(String productName, BigDecimal  unitPrice, boolean status) {
+    public Product(String productName, BigDecimal  unitPrice) {
         this.productName = productName;
         this.unitPrice = unitPrice;
-        this.status = status;
     }
 
     // ===== GETTER SETTER =====
@@ -77,13 +74,7 @@ public class Product {
         this.unitPrice = unitPrice;
     }
 
-    public boolean isStatus() {
-        return status;
-    }
 
-    public void setStatus(boolean status) {
-        this.status = status;
-    }
 
     public Category getCategory() {
         return category;
@@ -115,5 +106,9 @@ public class Product {
 
     public void setBranchProducts(List<BranchProduct> branchProducts) {
         this.branchProducts = branchProducts;
+    }
+    @Override
+    public String toString() {
+        return productName;
     }
 }

@@ -1,62 +1,54 @@
 package com.example.storemanagement.model.id;
 
-
+import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
+
 import java.io.Serializable;
 import java.util.Objects;
 
 @Embeddable
 public class BranchProductId implements Serializable {
 
-    private Integer branchID;
-    private Integer productID;
+    @Column(name = "BranchID")
+    private int branchID;
 
-    // Constructors
+    @Column(name = "ProductID")
+    private int productID;
+
     public BranchProductId() {}
 
-    public BranchProductId(Integer branchID, Integer productID) {
+    public BranchProductId(int branchID, int productID) {
         this.branchID = branchID;
         this.productID = productID;
     }
 
-    // Getter và Setter
-    public Integer getBranchID() {
+    public int getBranchID() {
         return branchID;
     }
 
-    public void setBranchID(Integer branchID) {
+    public void setBranchID(int branchID) {
         this.branchID = branchID;
     }
 
-    public Integer getProductID() {
+    public int getProductID() {
         return productID;
     }
 
-    public void setProductID(Integer productID) {
+    public void setProductID(int productID) {
         this.productID = productID;
     }
 
-    // Equals & HashCode (Bắt buộc cho Composite Key)
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (!(o instanceof BranchProductId)) return false;
         BranchProductId that = (BranchProductId) o;
-        return Objects.equals(branchID, that.branchID) &&
-                Objects.equals(productID, that.productID);
+        return branchID == that.branchID &&
+                productID == that.productID;
     }
 
     @Override
     public int hashCode() {
         return Objects.hash(branchID, productID);
-    }
-
-    // ToString
-    @Override
-    public String toString() {
-        return "BranchProductId{" +
-                "branchID=" + branchID +
-                ", productID=" + productID +
-                '}';
     }
 }

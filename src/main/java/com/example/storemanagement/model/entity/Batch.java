@@ -1,9 +1,7 @@
 package com.example.storemanagement.model.entity;
 
-
 import jakarta.persistence.*;
-import java.time.LocalDate;
-
+import java.util.Date;
 
 @Entity
 @Table(name = "BATCHES")
@@ -11,27 +9,24 @@ public class Batch {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer batchID;
+    private int batchID;
 
     @ManyToOne
-    @JoinColumn(name = "ProductID", nullable = false)
+    @JoinColumn(name = "ProductID")
     private Product product;
 
     @ManyToOne
-    @JoinColumn(name = "SupplierID", nullable = false)
+    @JoinColumn(name = "SupplierID")
     private Supplier supplier;
 
-    private LocalDate importDate;
+    @Temporal(TemporalType.DATE)
+    private Date importDate;
 
-    private Integer quantity;
+    private int quantity;
 
-    // Getter và Setter
-    public Integer getBatchID() {
+    // ===== Getter/Setter =====
+    public int getBatchID() {
         return batchID;
-    }
-
-    public void setBatchID(Integer batchID) {
-        this.batchID = batchID;
     }
 
     public Product getProduct() {
@@ -50,31 +45,19 @@ public class Batch {
         this.supplier = supplier;
     }
 
-    public LocalDate getImportDate() {
+    public Date getImportDate() {
         return importDate;
     }
 
-    public void setImportDate(LocalDate importDate) {
+    public void setImportDate(Date importDate) {
         this.importDate = importDate;
     }
 
-    public Integer getQuantity() {
+    public int getQuantity() {
         return quantity;
     }
 
-    public void setQuantity(Integer quantity) {
+    public void setQuantity(int quantity) {
         this.quantity = quantity;
-    }
-
-    // ToString
-    @Override
-    public String toString() {
-        return "Batch{" +
-                "batchID=" + batchID +
-                ", product=" + (product != null ? product.getProductName() : "null") +
-                ", supplier=" + (supplier != null ? supplier.getSupplierName() : "null") +
-                ", importDate=" + importDate +
-                ", quantity=" + quantity +
-                '}';
     }
 }

@@ -6,6 +6,8 @@ import com.example.storemanagement.model.entity.Employee;
 import com.example.storemanagement.model.entity.Branch;
 
 import javax.swing.*;
+import javax.swing.event.PopupMenuEvent;
+import javax.swing.event.PopupMenuListener;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.util.List;
@@ -27,25 +29,39 @@ public class EmployeePanel extends JPanel {
         // ===== FORM =====
         JPanel form = new JPanel(new GridLayout(5, 2, 5, 5));
 
-        form.add(new JLabel("ID:"));
         txtId = new JTextField();
         txtId.setEnabled(false);
+
+        txtName = new JTextField();
+        txtPosition = new JTextField();
+        txtSalary = new JTextField();
+
+        cbBranch = new JComboBox<>();
+        cbBranch.setSelectedIndex(-1);
+
+        // ===== Lazy load Branch ComboBox khi mở =====
+        cbBranch.addPopupMenuListener(new PopupMenuListener() {
+            @Override
+            public void popupMenuWillBecomeVisible(PopupMenuEvent e) {
+                loadBranches();
+            }
+            @Override public void popupMenuWillBecomeInvisible(PopupMenuEvent e) {}
+            @Override public void popupMenuCanceled(PopupMenuEvent e) {}
+        });
+
+        form.add(new JLabel("ID:"));
         form.add(txtId);
 
         form.add(new JLabel("Name:"));
-        txtName = new JTextField();
         form.add(txtName);
 
         form.add(new JLabel("Position:"));
-        txtPosition = new JTextField();
         form.add(txtPosition);
 
         form.add(new JLabel("Salary:"));
-        txtSalary = new JTextField();
         form.add(txtSalary);
 
         form.add(new JLabel("Branch:"));
-        cbBranch = new JComboBox<>();
         form.add(cbBranch);
 
         add(form, BorderLayout.NORTH);
@@ -62,7 +78,6 @@ public class EmployeePanel extends JPanel {
 
         table = new JTable(model);
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-
         add(new JScrollPane(table), BorderLayout.CENTER);
 
         // ===== BUTTONS =====
@@ -80,8 +95,7 @@ public class EmployeePanel extends JPanel {
 
         add(buttons, BorderLayout.SOUTH);
 
-        // ===== LOAD DATA =====
-        loadBranches();
+        // ===== LOAD TABLE DATA =====
         loadData();
 
         // ===== EVENTS =====
@@ -93,19 +107,29 @@ public class EmployeePanel extends JPanel {
         btnClear.addActionListener(e -> clear());
     }
 
-    // ===== LOAD BRANCH =====
+    // ===== LOAD BRANCHES =====
     private void loadBranches() {
+        Branch selected = (Branch) cbBranch.getSelectedItem(); // giữ lại lựa chọn
         cbBranch.removeAllItems();
-        List<Branch> branches = branchController.getAllBranches();
 
+        List<Branch> branches = branchController.getAllBranches();
         for (Branch b : branches) {
             cbBranch.addItem(b);
         }
 
+        // restore selection nếu còn hợp lệ
+        if (selected != null) {
+            for (int i = 0; i < cbBranch.getItemCount(); i++) {
+                if (cbBranch.getItemAt(i).getBranchID() == selected.getBranchID()) {
+                    cbBranch.setSelectedIndex(i);
+                    return;
+                }
+            }
+        }
         cbBranch.setSelectedIndex(-1);
     }
 
-    // ===== LOAD EMPLOYEE =====
+    // ===== LOAD EMPLOYEES =====
     private void loadData() {
         model.setRowCount(0);
         List<Employee> list = controller.getAllEmployees();
@@ -121,13 +145,12 @@ public class EmployeePanel extends JPanel {
         }
     }
 
-    // ===== ADD =====
+    // ===== ADD EMPLOYEE =====
     private void addEmployee() {
         try {
             Branch b = (Branch) cbBranch.getSelectedItem();
-
             if (b == null) {
-                JOptionPane.showMessageDialog(this, "Please select branch!");
+                JOptionPane.showMessageDialog(this, "Please select a branch!");
                 return;
             }
 
@@ -146,12 +169,16 @@ public class EmployeePanel extends JPanel {
         }
     }
 
-    // ===== UPDATE =====
+    // ===== UPDATE EMPLOYEE =====
     private void updateEmployee() {
         if (txtId.getText().isEmpty()) return;
 
         try {
             Branch b = (Branch) cbBranch.getSelectedItem();
+            if (b == null) {
+                JOptionPane.showMessageDialog(this, "Please select a branch!");
+                return;
+            }
 
             controller.updateEmployee(
                     Integer.parseInt(txtId.getText()),
@@ -168,7 +195,7 @@ public class EmployeePanel extends JPanel {
         }
     }
 
-    // ===== DELETE =====
+    // ===== DELETE EMPLOYEE =====
     private void deleteEmployee() {
         if (txtId.getText().isEmpty()) return;
 
@@ -188,6 +215,11 @@ public class EmployeePanel extends JPanel {
 
             String branchName = model.getValueAt(row, 4).toString();
 
+            // lazy load nếu chưa load
+            if (cbBranch.getItemCount() == 0) {
+                loadBranches();
+            }
+
             for (int i = 0; i < cbBranch.getItemCount(); i++) {
                 if (cbBranch.getItemAt(i).getBranchName().equals(branchName)) {
                     cbBranch.setSelectedIndex(i);
@@ -197,7 +229,7 @@ public class EmployeePanel extends JPanel {
         }
     }
 
-    // ===== CLEAR =====
+    // ===== CLEAR FORM =====
     private void clear() {
         txtId.setText("");
         txtName.setText("");

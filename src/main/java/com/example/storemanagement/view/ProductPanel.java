@@ -1,13 +1,14 @@
 package com.example.storemanagement.view;
 
 import com.example.storemanagement.controller.ProductController;
-import com.example.storemanagement.dao.impl.CategoryDAOImpl;
+import com.example.storemanagement.controller.CategoryController;
 import com.example.storemanagement.model.entity.Product;
 import com.example.storemanagement.model.entity.Category;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
+import java.math.BigDecimal;
 import java.util.List;
 
 public class ProductPanel extends JPanel {
@@ -19,7 +20,10 @@ public class ProductPanel extends JPanel {
     private JComboBox<Category> cbCategory;
 
     private ProductController controller = new ProductController();
-    private CategoryDAOImpl categoryDAO = new CategoryDAOImpl();
+    private CategoryController categoryController = new CategoryController();
+
+    // ✅ Lazy load flag
+    private boolean isCategoryLoaded = false;
 
     public ProductPanel() {
         setLayout(new BorderLayout());
@@ -27,24 +31,36 @@ public class ProductPanel extends JPanel {
         // ===== FORM =====
         JPanel form = new JPanel(new GridLayout(4, 2, 5, 5));
 
+        form.add(new JLabel("ID:"));
         txtId = new JTextField();
         txtId.setEnabled(false);
-
-        txtName = new JTextField();
-        txtPrice = new JTextField();
-
-        cbCategory = new JComboBox<>();
-
-        form.add(new JLabel("ID:"));
         form.add(txtId);
 
         form.add(new JLabel("Name:"));
+        txtName = new JTextField();
         form.add(txtName);
 
         form.add(new JLabel("Price:"));
+        txtPrice = new JTextField();
         form.add(txtPrice);
 
         form.add(new JLabel("Category:"));
+        cbCategory = new JComboBox<>();
+
+        // ✅ Lazy load khi click
+        cbCategory.addPopupMenuListener(new javax.swing.event.PopupMenuListener() {
+            @Override
+            public void popupMenuWillBecomeVisible(javax.swing.event.PopupMenuEvent e) {
+                if (!isCategoryLoaded) {
+                    loadCategories();
+                    //isCategoryLoaded = true;
+                }
+            }
+
+            @Override public void popupMenuWillBecomeInvisible(javax.swing.event.PopupMenuEvent e) {}
+            @Override public void popupMenuCanceled(javax.swing.event.PopupMenuEvent e) {}
+        });
+
         form.add(cbCategory);
 
         add(form, BorderLayout.NORTH);
@@ -53,15 +69,18 @@ public class ProductPanel extends JPanel {
         model = new DefaultTableModel(
                 new String[]{"ID", "Name", "Price", "Category"}, 0
         ) {
-            public boolean isCellEditable(int r, int c) {
+            @Override
+            public boolean isCellEditable(int row, int column) {
                 return false;
             }
         };
 
         table = new JTable(model);
+        table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+
         add(new JScrollPane(table), BorderLayout.CENTER);
 
-        // ===== BUTTON =====
+        // ===== BUTTONS =====
         JPanel buttons = new JPanel();
 
         JButton btnAdd = new JButton("Add");
@@ -76,55 +95,32 @@ public class ProductPanel extends JPanel {
 
         add(buttons, BorderLayout.SOUTH);
 
-        // ===== INIT =====
-
+        // ===== LOAD DATA =====
         loadData();
 
         // ===== EVENTS =====
         table.getSelectionModel().addListSelectionListener(e -> fillForm());
 
-        btnAdd.addActionListener(e -> {
-            controller.add(
-                    txtName.getText(),
-                    Double.parseDouble(txtPrice.getText()),
-                    ((Category) cbCategory.getSelectedItem()).getCategoryID()
-            );
-            loadData();
-            clear();
-        });
-
-        btnUpdate.addActionListener(e -> {
-            if (txtId.getText().isEmpty()) return;
-
-            controller.update(
-                    Integer.parseInt(txtId.getText()),
-                    txtName.getText(),
-                    Double.parseDouble(txtPrice.getText()),
-                    ((Category) cbCategory.getSelectedItem()).getCategoryID()
-            );
-            loadData();
-        });
-
-        btnDelete.addActionListener(e -> {
-            if (txtId.getText().isEmpty()) return;
-
-            controller.delete(Integer.parseInt(txtId.getText()));
-            loadData();
-            clear();
-        });
-
+        btnAdd.addActionListener(e -> addProduct());
+        btnUpdate.addActionListener(e -> updateProduct());
+        btnDelete.addActionListener(e -> deleteProduct());
         btnClear.addActionListener(e -> clear());
     }
 
+    // ===== LOAD CATEGORY =====
     private void loadCategories() {
         cbCategory.removeAllItems();
-        List<Category> list = categoryDAO.findAll();
+
+        List<Category> list = categoryController.getAll();
 
         for (Category c : list) {
             cbCategory.addItem(c);
         }
+
+        cbCategory.setSelectedIndex(-1);
     }
 
+    // ===== LOAD PRODUCT =====
     private void loadData() {
         model.setRowCount(0);
         List<Product> list = controller.getAll();
@@ -139,9 +135,76 @@ public class ProductPanel extends JPanel {
         }
     }
 
+    // ===== ADD =====
+    private void addProduct() {
+        try {
+            Category c = (Category) cbCategory.getSelectedItem();
+
+            if (c == null) {
+                JOptionPane.showMessageDialog(this, "Please select category!");
+                return;
+            }
+
+            controller.add(
+                    txtName.getText(),
+                    Double.parseDouble(txtPrice.getText()),
+                    c.getCategoryID()
+            );
+
+            loadData();
+            clear();
+
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(this, "Invalid input!");
+        }
+    }
+
+    // ===== UPDATE =====
+    private void updateProduct() {
+        if (txtId.getText().isEmpty()) return;
+
+        try {
+            Category c = (Category) cbCategory.getSelectedItem();
+
+            if (c == null) {
+                JOptionPane.showMessageDialog(this, "Please select category!");
+                return;
+            }
+
+            controller.update(
+                    Integer.parseInt(txtId.getText()),
+                    txtName.getText(),
+                    Double.parseDouble(txtPrice.getText()),
+                    c.getCategoryID()
+            );
+
+            loadData();
+
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(this, "Invalid input!");
+        }
+    }
+
+    // ===== DELETE =====
+    private void deleteProduct() {
+        if (txtId.getText().isEmpty()) return;
+
+        controller.delete(Integer.parseInt(txtId.getText()));
+        loadData();
+        clear();
+    }
+
+    // ===== FILL FORM =====
     private void fillForm() {
         int row = table.getSelectedRow();
         if (row >= 0) {
+
+            // ✅ đảm bảo category đã load
+            if (!isCategoryLoaded) {
+                loadCategories();
+                isCategoryLoaded = true;
+            }
+
             txtId.setText(model.getValueAt(row, 0).toString());
             txtName.setText(model.getValueAt(row, 1).toString());
             txtPrice.setText(model.getValueAt(row, 2).toString());
@@ -157,10 +220,12 @@ public class ProductPanel extends JPanel {
         }
     }
 
+    // ===== CLEAR =====
     private void clear() {
         txtId.setText("");
         txtName.setText("");
         txtPrice.setText("");
+        cbCategory.setSelectedIndex(-1);
         table.clearSelection();
     }
 }

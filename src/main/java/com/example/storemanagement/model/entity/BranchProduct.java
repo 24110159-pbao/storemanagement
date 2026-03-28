@@ -66,4 +66,5 @@ public class BranchProduct {
                 ", quantity=" + quantity +
                 '}';
     }
+
 }
