@@ -32,8 +32,16 @@ public class CategoryPanel extends JPanel {
         add(form, BorderLayout.NORTH);
 
         // ===== TABLE =====
-        model = new DefaultTableModel(new String[]{"ID", "Name"}, 0);
+        model = new DefaultTableModel(new String[]{"ID", "Name"}, 0) {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return false; // khóa edit
+            }
+        };
         table = new JTable(model);
+        table.setRowSelectionAllowed(true);
+        table.setColumnSelectionAllowed(false);
+        table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         add(new JScrollPane(table), BorderLayout.CENTER);
 
         // ===== BUTTONS =====

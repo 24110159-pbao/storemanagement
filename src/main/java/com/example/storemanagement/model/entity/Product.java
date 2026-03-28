@@ -1,7 +1,9 @@
 package com.example.storemanagement.model.entity;
 
 import jakarta.persistence.*;
+
 import java.math.BigDecimal;
+import java.util.List;
 
 @Entity
 @Table(name = "PRODUCTS")
@@ -10,39 +12,53 @@ public class Product {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "ProductID")
-    private Integer productId;
+    private int productID;
 
-    @Column(name = "ProductName", nullable = false, length = 100)
+    @Column(name = "ProductName", nullable = false)
     private String productName;
 
-    @Column(name = "UnitPrice", nullable = false, precision = 10, scale = 2)
+
+    @Column(name = "UnitPrice", nullable = false)
     private BigDecimal unitPrice;
 
     @Column(name = "Status")
-    private Boolean status;
+    private boolean status;
 
-    // =========================
-    // RELATIONSHIPS
-    // =========================
-
+    // ===== MANY TO ONE -> CATEGORY =====
     @ManyToOne
     @JoinColumn(name = "CategoryID")
     private Category category;
 
-    @ManyToOne
-    @JoinColumn(name = "SupplierID")
-    private Supplier supplier;
+    // ===== ONE TO MANY -> BATCH =====
+    @OneToMany(mappedBy = "product")
+    private List<Batch> batches;
 
-    // =========================
-    // GETTERS & SETTERS
-    // =========================
+    // ===== ONE TO MANY -> INVOICE DETAIL =====
+    @OneToMany(mappedBy = "product")
+    private List<InvoiceDetail> invoiceDetails;
 
-    public Integer getProductId() {
-        return productId;
+    // ===== MANY TO MANY qua BranchProduct =====
+    @OneToMany(mappedBy = "product")
+    private List<BranchProduct> branchProducts;
+
+    // ===== CONSTRUCTOR =====
+    public Product() {
     }
 
-    public void setProductId(Integer productId) {
-        this.productId = productId;
+    public Product(String productName, BigDecimal  unitPrice, boolean status) {
+        this.productName = productName;
+        this.unitPrice = unitPrice;
+        this.status = status;
+    }
+
+    // ===== GETTER SETTER =====
+
+    public int getProductID() {
+        return productID;
+    }
+
+    public void setProductID(int productID) {
+        this.productID = productID;
     }
 
     public String getProductName() {
@@ -53,19 +69,19 @@ public class Product {
         this.productName = productName;
     }
 
-    public BigDecimal getUnitPrice() {
+    public BigDecimal  getUnitPrice() {
         return unitPrice;
     }
 
-    public void setUnitPrice(BigDecimal unitPrice) {
+    public void setUnitPrice(BigDecimal  unitPrice) {
         this.unitPrice = unitPrice;
     }
 
-    public Boolean getStatus() {
+    public boolean isStatus() {
         return status;
     }
 
-    public void setStatus(Boolean status) {
+    public void setStatus(boolean status) {
         this.status = status;
     }
 
@@ -77,11 +93,27 @@ public class Product {
         this.category = category;
     }
 
-    public Supplier getSupplier() {
-        return supplier;
+    public List<Batch> getBatches() {
+        return batches;
     }
 
-    public void setSupplier(Supplier supplier) {
-        this.supplier = supplier;
+    public void setBatches(List<Batch> batches) {
+        this.batches = batches;
+    }
+
+    public List<InvoiceDetail> getInvoiceDetails() {
+        return invoiceDetails;
+    }
+
+    public void setInvoiceDetails(List<InvoiceDetail> invoiceDetails) {
+        this.invoiceDetails = invoiceDetails;
+    }
+
+    public List<BranchProduct> getBranchProducts() {
+        return branchProducts;
+    }
+
+    public void setBranchProducts(List<BranchProduct> branchProducts) {
+        this.branchProducts = branchProducts;
     }
 }

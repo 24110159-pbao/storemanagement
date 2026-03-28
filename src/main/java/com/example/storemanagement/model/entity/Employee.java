@@ -3,31 +3,33 @@ package com.example.storemanagement.model.entity;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
 
-import java.util.List;
-
 @Entity
 @Table(name = "EMPLOYEES")
 public class Employee {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "EmployeeID")
     private Integer employeeID;
 
-    @Column(nullable = false)
+    @Column(name = "EmployeeName", nullable = false, length = 100)
     private String employeeName;
 
+    @Column(name = "Position", length = 50)
     private String position;
 
+    @Column(name = "Salary")
     private BigDecimal salary;
 
+    // ===== RELATIONSHIP =====
     @ManyToOne
     @JoinColumn(name = "BranchID")
     private Branch branch;
 
-    @OneToMany(mappedBy = "employee")
-    private List<Invoice> invoices;
+    // ===== CONSTRUCTOR =====
+    public Employee() {}
 
-    // Getter và Setter
+    // ===== GETTER / SETTER =====
     public Integer getEmployeeID() {
         return employeeID;
     }
@@ -66,25 +68,5 @@ public class Employee {
 
     public void setBranch(Branch branch) {
         this.branch = branch;
-    }
-
-    public List<Invoice> getInvoices() {
-        return invoices;
-    }
-
-    public void setInvoices(List<Invoice> invoices) {
-        this.invoices = invoices;
-    }
-
-    // ToString
-    @Override
-    public String toString() {
-        return "Employee{" +
-                "employeeID=" + employeeID +
-                ", employeeName='" + employeeName + '\'' +
-                ", position='" + position + '\'' +
-                ", salary=" + salary +
-                ", branch=" + (branch != null ? branch.getBranchName() : "null") +
-                '}';
     }
 }

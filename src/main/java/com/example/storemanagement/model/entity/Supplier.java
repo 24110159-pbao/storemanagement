@@ -1,7 +1,6 @@
 package com.example.storemanagement.model.entity;
 
 import jakarta.persistence.*;
-import java.util.List;
 
 @Entity
 @Table(name = "SUPPLIERS")
@@ -9,66 +8,44 @@ public class Supplier {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "SupplierID")
-    private Integer supplierId;
+    private int supplierID;
 
-    @Column(name = "SupplierName", nullable = false, length = 100)
     private String supplierName;
-
-    @Column(name = "Address", length = 255)
     private String address;
-
-    @Column(name = "Phone", length = 20)
     private String phone;
 
-    // =========================
-    // RELATIONSHIPS
-    // =========================
-
-    @OneToMany(mappedBy = "supplier")
-    private List<Product> products;
-
-    // =========================
-    // GETTERS & SETTERS
-    // =========================
-
-    public Integer getSupplierId() {
-        return supplierId;
+    // 1. Constructor không đối số (Bắt buộc cho JPA)
+    public Supplier() {
     }
 
-    public void setSupplierId(Integer supplierId) {
-        this.supplierId = supplierId;
-    }
-
-    public String getSupplierName() {
-        return supplierName;
-    }
-
-    public void setSupplierName(String supplierName) {
+    // 2. Constructor có đối số (Dùng để khởi tạo nhanh)
+    public Supplier(String supplierName, String address, String phone) {
         this.supplierName = supplierName;
-    }
-
-    public String getAddress() {
-        return address;
-    }
-
-    public void setAddress(String address) {
         this.address = address;
-    }
-
-    public String getPhone() {
-        return phone;
-    }
-
-    public void setPhone(String phone) {
         this.phone = phone;
     }
 
-    public List<Product> getProducts() {
-        return products;
-    }
+    // 3. Getters & Setters
+    public int getSupplierID() { return supplierID; }
+    public void setSupplierID(int supplierID) { this.supplierID = supplierID; }
 
-    public void setProducts(List<Product> products) {
-        this.products = products;
+    public String getSupplierName() { return supplierName; }
+    public void setSupplierName(String supplierName) { this.supplierName = supplierName; }
+
+    public String getAddress() { return address; }
+    public void setAddress(String address) { this.address = address; }
+
+    public String getPhone() { return phone; }
+    public void setPhone(String phone) { this.phone = phone; }
+
+    // 4. toString (Hỗ trợ debug/in dữ liệu)
+    @Override
+    public String toString() {
+        return "Supplier{" +
+                "supplierID=" + supplierID +
+                ", supplierName='" + supplierName + '\'' +
+                ", address='" + address + '\'' +
+                ", phone='" + phone + '\'' +
+                '}';
     }
 }

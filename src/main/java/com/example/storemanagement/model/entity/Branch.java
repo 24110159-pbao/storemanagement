@@ -1,8 +1,6 @@
 package com.example.storemanagement.model.entity;
 
 import jakarta.persistence.*;
-import java.util.*;
-
 
 @Entity
 @Table(name = "BRANCHES")
@@ -10,25 +8,20 @@ public class Branch {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "BranchID")
     private Integer branchID;
 
-    @Column(nullable = false)
+    @Column(name = "BranchName", nullable = false, length = 100)
     private String branchName;
 
+    @Column(name = "Address")
     private String address;
 
+    @Column(name = "Phone")
     private String phone;
 
-    @OneToMany(mappedBy = "branch")
-    private List<Employee> employees;
+    public Branch() {}
 
-    @OneToMany(mappedBy = "branch")
-    private List<BranchProduct> branchProducts;
-
-    @OneToMany(mappedBy = "branch")
-    private List<Invoice> invoices;
-
-    // Getter và Setter
     public Integer getBranchID() {
         return branchID;
     }
@@ -61,38 +54,9 @@ public class Branch {
         this.phone = phone;
     }
 
-    public List<Employee> getEmployees() {
-        return employees;
-    }
-
-    public void setEmployees(List<Employee> employees) {
-        this.employees = employees;
-    }
-
-    public List<BranchProduct> getBranchProducts() {
-        return branchProducts;
-    }
-
-    public void setBranchProducts(List<BranchProduct> branchProducts) {
-        this.branchProducts = branchProducts;
-    }
-
-    public List<Invoice> getInvoices() {
-        return invoices;
-    }
-
-    public void setInvoices(List<Invoice> invoices) {
-        this.invoices = invoices;
-    }
-
-    // ToString (Loại bỏ các List để đảm bảo hiệu năng và tránh lỗi đệ quy)
+    // QUAN TRỌNG cho ComboBox
     @Override
     public String toString() {
-        return "Branch{" +
-                "branchID=" + branchID +
-                ", branchName='" + branchName + '\'' +
-                ", address='" + address + '\'' +
-                ", phone='" + phone + '\'' +
-                '}';
+        return branchName;
     }
 }

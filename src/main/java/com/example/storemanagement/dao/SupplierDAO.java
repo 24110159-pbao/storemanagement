@@ -4,10 +4,9 @@ import com.example.storemanagement.model.entity.Supplier;
 import java.util.List;
 
 public interface SupplierDAO {
+    List<Supplier> findAll();
+    Supplier findById(int id);
     void save(Supplier supplier);
     void update(Supplier supplier);
-    void delete(Integer id);
-    Supplier findById(Integer id);
-    List<Supplier> findAll();
-    List<Supplier> findByName(String name);
+    void delete(int id);
 }

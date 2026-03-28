@@ -1,61 +1,71 @@
 package com.example.storemanagement.dao.impl;
 
+import com.example.storemanagement.config.JpaUtil;
 import com.example.storemanagement.dao.SupplierDAO;
 import com.example.storemanagement.model.entity.Supplier;
+
 import jakarta.persistence.EntityManager;
-import jakarta.persistence.TypedQuery;
+import jakarta.persistence.EntityTransaction;
+
 import java.util.List;
 
 public class SupplierDAOImpl implements SupplierDAO {
 
-    private final EntityManager em;
-
-    public SupplierDAOImpl(EntityManager em) {
-        this.em = em;
+    @Override
+    public List<Supplier> findAll() {
+        EntityManager em = JpaUtil.getEntityManager();
+        return em.createQuery("FROM Supplier", Supplier.class).getResultList();
     }
 
     @Override
-    public void save(Supplier supplier) {
-        em.getTransaction().begin();
-        em.persist(supplier);
-        em.getTransaction().commit();
-    }
-
-    @Override
-    public void update(Supplier supplier) {
-        em.getTransaction().begin();
-        em.merge(supplier);
-        em.getTransaction().commit();
-    }
-
-    @Override
-    public void delete(Integer id) {
-        em.getTransaction().begin();
-        Supplier supplier = em.find(Supplier.class, id);
-        if (supplier != null) {
-            em.remove(supplier);
-        }
-        em.getTransaction().commit();
-    }
-
-    @Override
-    public Supplier findById(Integer id) {
+    public Supplier findById(int id) {
+        EntityManager em = JpaUtil.getEntityManager();
         return em.find(Supplier.class, id);
     }
 
     @Override
-    public List<Supplier> findAll() {
-        return em.createQuery("SELECT s FROM Supplier s", Supplier.class)
-                .getResultList();
+    public void save(Supplier supplier) {
+        EntityManager em = JpaUtil.getEntityManager();
+        EntityTransaction tx = em.getTransaction();
+
+        try {
+            tx.begin();
+            em.persist(supplier);
+            tx.commit();
+        } catch (Exception e) {
+            tx.rollback();
+            e.printStackTrace();
+        }
     }
 
     @Override
-    public List<Supplier> findByName(String name) {
-        TypedQuery<Supplier> query = em.createQuery(
-                "SELECT s FROM Supplier s WHERE LOWER(s.supplierName) LIKE LOWER(:name)",
-                Supplier.class
-        );
-        query.setParameter("name", "%" + name + "%");
-        return query.getResultList();
+    public void update(Supplier supplier) {
+        EntityManager em = JpaUtil.getEntityManager();
+        EntityTransaction tx = em.getTransaction();
+
+        try {
+            tx.begin();
+            em.merge(supplier);
+            tx.commit();
+        } catch (Exception e) {
+            tx.rollback();
+            e.printStackTrace();
+        }
+    }
+
+    @Override
+    public void delete(int id) {
+        EntityManager em = JpaUtil.getEntityManager();
+        EntityTransaction tx = em.getTransaction();
+
+        try {
+            tx.begin();
+            Supplier s = em.find(Supplier.class, id);
+            if (s != null) em.remove(s);
+            tx.commit();
+        } catch (Exception e) {
+            tx.rollback();
+            e.printStackTrace();
+        }
     }
 }

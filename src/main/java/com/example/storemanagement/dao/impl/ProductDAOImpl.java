@@ -1,21 +1,23 @@
 package com.example.storemanagement.dao.impl;
 
+import com.example.storemanagement.config.JpaUtil;
 import com.example.storemanagement.dao.ProductDAO;
 import com.example.storemanagement.model.entity.Product;
+
 import jakarta.persistence.EntityManager;
-import jakarta.persistence.TypedQuery;
 import java.util.List;
 
 public class ProductDAOImpl implements ProductDAO {
 
-    private final EntityManager em;
-
-    public ProductDAOImpl(EntityManager em) {
-        this.em = em;
+    @Override
+    public List<Product> findAll() {
+        EntityManager em = JpaUtil.getEntityManager();
+        return em.createQuery("FROM Product", Product.class).getResultList();
     }
 
     @Override
     public void save(Product product) {
+        EntityManager em = JpaUtil.getEntityManager();
         em.getTransaction().begin();
         em.persist(product);
         em.getTransaction().commit();
@@ -23,39 +25,24 @@ public class ProductDAOImpl implements ProductDAO {
 
     @Override
     public void update(Product product) {
+        EntityManager em = JpaUtil.getEntityManager();
         em.getTransaction().begin();
         em.merge(product);
         em.getTransaction().commit();
     }
 
     @Override
-    public void delete(Integer id) {
+    public void delete(int id) {
+        EntityManager em = JpaUtil.getEntityManager();
         em.getTransaction().begin();
-        Product product = em.find(Product.class, id);
-        if (product != null) {
-            em.remove(product);
-        }
+        Product p = em.find(Product.class, id);
+        if (p != null) em.remove(p);
         em.getTransaction().commit();
     }
 
     @Override
-    public Product findById(Integer id) {
+    public Product findById(int id) {
+        EntityManager em = JpaUtil.getEntityManager();
         return em.find(Product.class, id);
-    }
-
-    @Override
-    public List<Product> findAll() {
-        return em.createQuery("SELECT p FROM Product p", Product.class)
-                .getResultList();
-    }
-
-    @Override
-    public List<Product> findByName(String name) {
-        TypedQuery<Product> query = em.createQuery(
-                "SELECT p FROM Product p WHERE LOWER(p.productName) LIKE LOWER(:name)",
-                Product.class
-        );
-        query.setParameter("name", "%" + name + "%");
-        return query.getResultList();
     }
 }

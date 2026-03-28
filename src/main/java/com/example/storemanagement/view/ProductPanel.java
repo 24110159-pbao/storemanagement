@@ -1,202 +1,166 @@
 package com.example.storemanagement.view;
 
-import com.example.storemanagement.model.entity.Category;
+import com.example.storemanagement.controller.ProductController;
+import com.example.storemanagement.dao.impl.CategoryDAOImpl;
 import com.example.storemanagement.model.entity.Product;
-import com.example.storemanagement.model.entity.Supplier;
-import com.example.storemanagement.service.ProductService;
+import com.example.storemanagement.model.entity.Category;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
-import java.math.BigDecimal;
 import java.util.List;
 
 public class ProductPanel extends JPanel {
 
-    private final ProductService productService;
-
     private JTable table;
-    private DefaultTableModel tableModel;
+    private DefaultTableModel model;
 
-    private JTextField txtName;
-    private JTextField txtPrice;
+    private JTextField txtId, txtName, txtPrice;
     private JComboBox<Category> cbCategory;
-    private JComboBox<Supplier> cbSupplier;
-    private JCheckBox chkStatus;
 
-    private JButton btnAdd;
-    private JButton btnUpdate;
-    private JButton btnDelete;
-    private JButton btnRefresh;
+    private ProductController controller = new ProductController();
+    private CategoryDAOImpl categoryDAO = new CategoryDAOImpl();
 
-    private Integer selectedProductId = null;
-
-    public ProductPanel(ProductService productService,
-                        List<Category> categories,
-                        List<Supplier> suppliers) {
-        this.productService = productService;
-
+    public ProductPanel() {
         setLayout(new BorderLayout());
 
-        initComponents(categories, suppliers);
-        loadTable();
-        initEvents();
-    }
+        // ===== FORM =====
+        JPanel form = new JPanel(new GridLayout(4, 2, 5, 5));
 
-    private void initComponents(List<Category> categories, List<Supplier> suppliers) {
-
-        // ================= TABLE =================
-        tableModel = new DefaultTableModel(
-                new String[]{"ID", "Name", "Price", "Category", "Supplier", "Status"}, 0
-        );
-        table = new JTable(tableModel);
-
-        add(new JScrollPane(table), BorderLayout.CENTER);
-
-        // ================= FORM =================
-        JPanel formPanel = new JPanel(new GridLayout(6, 2, 10, 10));
+        txtId = new JTextField();
+        txtId.setEnabled(false);
 
         txtName = new JTextField();
         txtPrice = new JTextField();
 
         cbCategory = new JComboBox<>();
-        for (Category c : categories) {
-            cbCategory.addItem(c);
-        }
 
-        cbSupplier = new JComboBox<>();
-        for (Supplier s : suppliers) {
-            cbSupplier.addItem(s);
-        }
+        form.add(new JLabel("ID:"));
+        form.add(txtId);
 
-        chkStatus = new JCheckBox("Assigned");
+        form.add(new JLabel("Name:"));
+        form.add(txtName);
 
-        formPanel.add(new JLabel("Name:"));
-        formPanel.add(txtName);
+        form.add(new JLabel("Price:"));
+        form.add(txtPrice);
 
-        formPanel.add(new JLabel("Price:"));
-        formPanel.add(txtPrice);
+        form.add(new JLabel("Category:"));
+        form.add(cbCategory);
 
-        formPanel.add(new JLabel("Category:"));
-        formPanel.add(cbCategory);
+        add(form, BorderLayout.NORTH);
 
-        formPanel.add(new JLabel("Supplier:"));
-        formPanel.add(cbSupplier);
+        // ===== TABLE =====
+        model = new DefaultTableModel(
+                new String[]{"ID", "Name", "Price", "Category"}, 0
+        ) {
+            public boolean isCellEditable(int r, int c) {
+                return false;
+            }
+        };
 
-        formPanel.add(new JLabel("Status:"));
-        formPanel.add(chkStatus);
+        table = new JTable(model);
+        add(new JScrollPane(table), BorderLayout.CENTER);
 
-        // ================= BUTTONS =================
-        JPanel buttonPanel = new JPanel();
+        // ===== BUTTON =====
+        JPanel buttons = new JPanel();
 
-        btnAdd = new JButton("Add");
-        btnUpdate = new JButton("Update");
-        btnDelete = new JButton("Delete");
-        btnRefresh = new JButton("Refresh");
+        JButton btnAdd = new JButton("Add");
+        JButton btnUpdate = new JButton("Update");
+        JButton btnDelete = new JButton("Delete");
+        JButton btnClear = new JButton("Clear");
 
-        buttonPanel.add(btnAdd);
-        buttonPanel.add(btnUpdate);
-        buttonPanel.add(btnDelete);
-        buttonPanel.add(btnRefresh);
+        buttons.add(btnAdd);
+        buttons.add(btnUpdate);
+        buttons.add(btnDelete);
+        buttons.add(btnClear);
 
-        JPanel southPanel = new JPanel(new BorderLayout());
-        southPanel.add(formPanel, BorderLayout.CENTER);
-        southPanel.add(buttonPanel, BorderLayout.SOUTH);
+        add(buttons, BorderLayout.SOUTH);
 
-        add(southPanel, BorderLayout.SOUTH);
+        // ===== INIT =====
+
+        loadData();
+
+        // ===== EVENTS =====
+        table.getSelectionModel().addListSelectionListener(e -> fillForm());
+
+        btnAdd.addActionListener(e -> {
+            controller.add(
+                    txtName.getText(),
+                    Double.parseDouble(txtPrice.getText()),
+                    ((Category) cbCategory.getSelectedItem()).getCategoryID()
+            );
+            loadData();
+            clear();
+        });
+
+        btnUpdate.addActionListener(e -> {
+            if (txtId.getText().isEmpty()) return;
+
+            controller.update(
+                    Integer.parseInt(txtId.getText()),
+                    txtName.getText(),
+                    Double.parseDouble(txtPrice.getText()),
+                    ((Category) cbCategory.getSelectedItem()).getCategoryID()
+            );
+            loadData();
+        });
+
+        btnDelete.addActionListener(e -> {
+            if (txtId.getText().isEmpty()) return;
+
+            controller.delete(Integer.parseInt(txtId.getText()));
+            loadData();
+            clear();
+        });
+
+        btnClear.addActionListener(e -> clear());
     }
 
-    private void loadTable() {
-        tableModel.setRowCount(0);
+    private void loadCategories() {
+        cbCategory.removeAllItems();
+        List<Category> list = categoryDAO.findAll();
 
-        List<Product> products = productService.getAll();
-        for (Product p : products) {
-            tableModel.addRow(new Object[]{
-                    p.getProductId(),
+        for (Category c : list) {
+            cbCategory.addItem(c);
+        }
+    }
+
+    private void loadData() {
+        model.setRowCount(0);
+        List<Product> list = controller.getAll();
+
+        for (Product p : list) {
+            model.addRow(new Object[]{
+                    p.getProductID(),
                     p.getProductName(),
                     p.getUnitPrice(),
-                    p.getCategory() != null ? p.getCategory().getCategoryName() : "",
-                    p.getSupplier() != null ? p.getSupplier().getSupplierName() : "",
-                    p.getStatus()
+                    p.getCategory() != null ? p.getCategory().getCategoryName() : ""
             });
         }
     }
 
-    private void initEvents() {
+    private void fillForm() {
+        int row = table.getSelectedRow();
+        if (row >= 0) {
+            txtId.setText(model.getValueAt(row, 0).toString());
+            txtName.setText(model.getValueAt(row, 1).toString());
+            txtPrice.setText(model.getValueAt(row, 2).toString());
 
-        table.getSelectionModel().addListSelectionListener(e -> {
-            int row = table.getSelectedRow();
-            if (row >= 0) {
-                selectedProductId = (Integer) tableModel.getValueAt(row, 0);
-                txtName.setText(tableModel.getValueAt(row, 1).toString());
-                txtPrice.setText(tableModel.getValueAt(row, 2).toString());
-                chkStatus.setSelected((Boolean) tableModel.getValueAt(row, 5));
-            }
-        });
+            String categoryName = model.getValueAt(row, 3).toString();
 
-        btnAdd.addActionListener(e -> {
-            try {
-                Product product = buildProductFromForm();
-                productService.create(product);
-                clearForm();
-                loadTable();
-            } catch (Exception ex) {
-                showError(ex.getMessage());
-            }
-        });
-
-        btnUpdate.addActionListener(e -> {
-            try {
-                if (selectedProductId == null) {
-                    showError("Select a product first");
-                    return;
+            for (int i = 0; i < cbCategory.getItemCount(); i++) {
+                if (cbCategory.getItemAt(i).getCategoryName().equals(categoryName)) {
+                    cbCategory.setSelectedIndex(i);
+                    break;
                 }
-                Product product = buildProductFromForm();
-                product.setProductId(selectedProductId);
-                productService.update(product);
-                clearForm();
-                loadTable();
-            } catch (Exception ex) {
-                showError(ex.getMessage());
             }
-        });
-
-        btnDelete.addActionListener(e -> {
-            try {
-                if (selectedProductId == null) {
-                    showError("Select a product first");
-                    return;
-                }
-                productService.delete(selectedProductId);
-                clearForm();
-                loadTable();
-            } catch (Exception ex) {
-                showError(ex.getMessage());
-            }
-        });
-
-        btnRefresh.addActionListener(e -> loadTable());
+        }
     }
 
-    private Product buildProductFromForm() {
-        Product p = new Product();
-        p.setProductName(txtName.getText());
-        p.setUnitPrice(new BigDecimal(txtPrice.getText()));
-        p.setCategory((Category) cbCategory.getSelectedItem());
-        p.setSupplier((Supplier) cbSupplier.getSelectedItem());
-        p.setStatus(chkStatus.isSelected());
-        return p;
-    }
-
-    private void clearForm() {
+    private void clear() {
+        txtId.setText("");
         txtName.setText("");
         txtPrice.setText("");
-        chkStatus.setSelected(false);
-        selectedProductId = null;
         table.clearSelection();
-    }
-
-    private void showError(String message) {
-        JOptionPane.showMessageDialog(this, message, "Error", JOptionPane.ERROR_MESSAGE);
     }
 }

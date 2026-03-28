@@ -1,49 +1,20 @@
 package com.example.storemanagement.service.impl;
 
 import com.example.storemanagement.dao.ProductDAO;
+import com.example.storemanagement.dao.CategoryDAO;
+import com.example.storemanagement.dao.impl.ProductDAOImpl;
+import com.example.storemanagement.dao.impl.CategoryDAOImpl;
 import com.example.storemanagement.model.entity.Product;
+import com.example.storemanagement.model.entity.Category;
 import com.example.storemanagement.service.ProductService;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 public class ProductServiceImpl implements ProductService {
 
-    private final ProductDAO productDAO;
-
-    public ProductServiceImpl(ProductDAO productDAO) {
-        this.productDAO = productDAO;
-    }
-
-    @Override
-    public void create(Product product) {
-        validate(product);
-        productDAO.save(product);
-    }
-
-    @Override
-    public void update(Product product) {
-        if (product.getProductId() == null) {
-            throw new IllegalArgumentException("Product ID must not be null for update");
-        }
-        validate(product);
-        productDAO.update(product);
-    }
-
-    @Override
-    public void delete(Integer id) {
-        if (id == null) {
-            throw new IllegalArgumentException("Product ID must not be null");
-        }
-        productDAO.delete(id);
-    }
-
-    @Override
-    public Product getById(Integer id) {
-        if (id == null) {
-            throw new IllegalArgumentException("Product ID must not be null");
-        }
-        return productDAO.findById(id);
-    }
+    private ProductDAO productDAO = new ProductDAOImpl();
+    private CategoryDAO categoryDAO = new CategoryDAOImpl();
 
     @Override
     public List<Product> getAll() {
@@ -51,28 +22,34 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
-    public List<Product> searchByName(String name) {
-        if (name == null || name.trim().isEmpty()) {
-            return productDAO.findAll();
-        }
-        return productDAO.findByName(name.trim());
+    public void add(String name, double price, int categoryId) {
+        Category c = categoryDAO.findById(categoryId);
+
+        Product p = new Product();
+        p.setProductName(name);
+        p.setUnitPrice(BigDecimal.valueOf(price));
+        p.setCategory(c);
+        p.setStatus(false);
+
+        productDAO.save(p);
     }
 
-    // =========================
-    // PRIVATE VALIDATION
-    // =========================
+    @Override
+    public void update(int id, String name, double price, int categoryId) {
+        Product p = productDAO.findById(id);
+        if (p == null) return;
 
-    private void validate(Product product) {
-        if (product == null) {
-            throw new IllegalArgumentException("Product must not be null");
-        }
+        Category c = categoryDAO.findById(categoryId);
 
-        if (product.getProductName() == null || product.getProductName().trim().isEmpty()) {
-            throw new IllegalArgumentException("Product name is required");
-        }
+        p.setProductName(name);
+        p.setUnitPrice(BigDecimal.valueOf(price));
+        p.setCategory(c);
 
-        if (product.getUnitPrice() == null || product.getUnitPrice().doubleValue() < 0) {
-            throw new IllegalArgumentException("Unit price must be >= 0");
-        }
+        productDAO.update(p);
+    }
+
+    @Override
+    public void delete(int id) {
+        productDAO.delete(id);
     }
 }
