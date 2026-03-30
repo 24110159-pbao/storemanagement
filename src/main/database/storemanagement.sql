@@ -40,7 +40,6 @@ CREATE TABLE PRODUCTS (
                           ProductName VARCHAR(100) NOT NULL,
                           UnitPrice DECIMAL(10,2) NOT NULL,
                           CategoryID INT NULL,
-                          Status BOOLEAN,
                           FOREIGN KEY (CategoryID) REFERENCES CATEGORIES(CategoryID)
                               ON DELETE SET NULL
                               ON UPDATE CASCADE
@@ -149,11 +148,11 @@ INSERT INTO BRANCHES VALUES
                          (3,'Chi nhánh Hà Nội','Hà Nội','0933333333');
 
 INSERT INTO PRODUCTS VALUES
-                         (1,'iPhone 14',20000000,1,1),
-                         (2,'Samsung S23',18000000,1,1),
-                         (3,'MacBook M2',30000000,2,1),
-                         (4,'Dell XPS',28000000,2,1),
-                         (5,'Tai nghe',500000,3,1);
+                         (1,'iPhone 14',20000000,1),
+                         (2,'Samsung S23',18000000,1),
+                         (3,'MacBook M2',30000000,2),
+                         (4,'Dell XPS',28000000,2),
+                         (5,'Tai nghe',500000,3);
 
 INSERT INTO CUSTOMERS VALUES
                           (1,'Nguyễn Văn A','0988888881','TP.HCM'),

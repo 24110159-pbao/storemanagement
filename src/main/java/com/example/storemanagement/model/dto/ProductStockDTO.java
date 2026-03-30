@@ -1,6 +1,7 @@
 package com.example.storemanagement.model.dto;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 public class ProductStockDTO {
     private int productId;

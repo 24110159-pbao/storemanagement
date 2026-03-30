@@ -52,12 +52,5 @@ public class InvoiceDetailId implements Serializable {
         return Objects.hash(invoiceID, productID);
     }
 
-    // ToString
-    @Override
-    public String toString() {
-        return "InvoiceDetailId{" +
-                "invoiceID=" + invoiceID +
-                ", productID=" + productID +
-                '}';
-    }
+
 }

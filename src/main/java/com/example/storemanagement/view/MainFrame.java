@@ -2,16 +2,30 @@ package com.example.storemanagement.view;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 
 public class MainFrame extends JFrame {
 
     private CardLayout cardLayout;
     private JPanel contentPanel;
+    private JPanel sidebar;
+
     private JButton[] buttons;
+    private JButton currentActiveButton;
+
+    // ===== PURE BLACK THEME =====
+    private final Color SIDEBAR_BG = new Color(0, 0, 0);          // nền đen
+    private final Color SIDEBAR_ITEM = new Color(25, 25, 25);     // nút thường
+    private final Color SIDEBAR_HOVER = new Color(50, 50, 50);    // hover xám
+    private final Color SIDEBAR_ACTIVE = new Color(153, 0, 0);    // đỏ đậm
+
+    private final Color CONTENT_BG = Color.BLACK;
+    private final Color TEXT_LIGHT = Color.WHITE;
 
     public MainFrame() {
         setTitle("Sales Management System");
-        setSize(1000, 600);
+        setSize(1100, 650);
         setLocationRelativeTo(null);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
@@ -21,51 +35,35 @@ public class MainFrame extends JFrame {
     private void initUI() {
         setLayout(new BorderLayout());
 
+        UIManager.put("defaultFont", new Font("Segoe UI Emoji", Font.PLAIN, 14));
+
         // ===== SIDEBAR =====
-        JPanel sidebar = new JPanel();
+        sidebar = new JPanel();
         sidebar.setLayout(new BoxLayout(sidebar, BoxLayout.Y_AXIS));
-        sidebar.setPreferredSize(new Dimension(180, 0));
-        sidebar.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
-        sidebar.setBackground(new Color(245, 245, 245));
+        sidebar.setPreferredSize(new Dimension(220, 0));
+        sidebar.setBackground(SIDEBAR_BG);
+        sidebar.setBorder(BorderFactory.createEmptyBorder(15, 10, 15, 10));
 
         // ===== BUTTONS =====
-        JButton btnCategory = new JButton("Category");
-        JButton btnSupplier = new JButton("Supplier");
-        JButton btnCustomer = new JButton("Customer");
-        JButton btnEmployee = new JButton("Employee");
-        JButton btnProduct = new JButton("Product");
-        JButton btnBranch = new JButton("Branch");
-        JButton btnBatch = new JButton("Batch");
-        JButton btnStock = new JButton("Product Stock");
-        JButton btnCreateInvoice = new JButton("Create Invoice");
-        JButton btnStatistics = new JButton("Statistics");
-        JButton btnOption = new JButton("Option");
+        JButton btnCategory = createMenuButton("Category", "📁");
+        JButton btnSupplier = createMenuButton("Supplier", "🚚");
+        JButton btnCustomer = createMenuButton("Customer", "👤");
+        JButton btnEmployee = createMenuButton("Employee", "👨‍💼");
+        JButton btnProduct = createMenuButton("Product", "📦");
+        JButton btnBranch = createMenuButton("Branch", "🏢");
+        JButton btnBatch = createMenuButton("Batch", "🧾");
+        JButton btnStock = createMenuButton("Product Stock", "📊");
+        JButton btnCreateInvoice = createMenuButton("Create Invoice", "🧮");
+        JButton btnStatistics = createMenuButton("Statistics", "📈");
 
         buttons = new JButton[]{
-                btnCategory,
-                btnSupplier,
-                btnCustomer,
-                btnBranch,
-                btnProduct,
-                btnEmployee,
-                btnBatch,
-                btnStock,
-                btnCreateInvoice,
-                btnStatistics,
-                btnOption
+                btnCategory, btnSupplier, btnCustomer,
+                btnEmployee, btnProduct, btnBranch,
+                btnBatch, btnStock, btnCreateInvoice,
+                btnStatistics
         };
 
-        Dimension btnSize = new Dimension(150, 40);
-
         for (JButton btn : buttons) {
-            btn.setMaximumSize(btnSize);
-            btn.setAlignmentX(Component.CENTER_ALIGNMENT);
-            btn.setFocusPainted(false);
-            btn.setBackground(Color.WHITE);
-            btn.setForeground(Color.BLACK);
-            btn.setOpaque(true);
-            btn.setBorder(BorderFactory.createLineBorder(new Color(200, 200, 200), 1, true));
-
             sidebar.add(Box.createVerticalStrut(10));
             sidebar.add(btn);
         }
@@ -75,6 +73,7 @@ public class MainFrame extends JFrame {
         // ===== CONTENT =====
         cardLayout = new CardLayout();
         contentPanel = new JPanel(cardLayout);
+        contentPanel.setBackground(CONTENT_BG);
 
         contentPanel.add(new CategoryPanel(), "CATEGORY");
         contentPanel.add(new SupplierPanel(), "SUPPLIER");
@@ -84,82 +83,92 @@ public class MainFrame extends JFrame {
         contentPanel.add(new BranchPanel(), "BRANCH");
         contentPanel.add(new BatchPanel(), "BATCH");
         contentPanel.add(new ProductStockPanel(), "STOCK");
-        contentPanel.add(new JLabel("Create Invoice Panel"), "CREATE_INVOICE");
-        contentPanel.add(new JLabel("Statistics Panel"), "STATISTICS");
-        contentPanel.add(new JLabel("Option Panel"), "OPTION");
+        contentPanel.add(new InvoiceView(), "CREATE_INVOICE");
+        contentPanel.add(new ReportPanel(), "STATISTICS");
 
         add(contentPanel, BorderLayout.CENTER);
 
         // ===== EVENTS =====
-        btnCategory.addActionListener(e -> {
-            cardLayout.show(contentPanel, "CATEGORY");
-            setActiveButton(btnCategory);
-        });
+        btnCategory.addActionListener(e -> switchPanel("CATEGORY", btnCategory));
+        btnSupplier.addActionListener(e -> switchPanel("SUPPLIER", btnSupplier));
+        btnCustomer.addActionListener(e -> switchPanel("CUSTOMER", btnCustomer));
+        btnEmployee.addActionListener(e -> switchPanel("EMPLOYEE", btnEmployee));
+        btnProduct.addActionListener(e -> switchPanel("PRODUCT", btnProduct));
+        btnBranch.addActionListener(e -> switchPanel("BRANCH", btnBranch));
+        btnBatch.addActionListener(e -> switchPanel("BATCH", btnBatch));
+        btnStock.addActionListener(e -> switchPanel("STOCK", btnStock));
+        btnCreateInvoice.addActionListener(e -> switchPanel("CREATE_INVOICE", btnCreateInvoice));
+        btnStatistics.addActionListener(e -> switchPanel("STATISTICS", btnStatistics));
 
-        btnSupplier.addActionListener(e -> {
-            cardLayout.show(contentPanel, "SUPPLIER");
-            setActiveButton(btnSupplier);
-        });
-
-        btnCustomer.addActionListener(e -> {
-            cardLayout.show(contentPanel, "CUSTOMER");
-            setActiveButton(btnCustomer);
-        });
-
-        btnEmployee.addActionListener(e -> {
-            cardLayout.show(contentPanel, "EMPLOYEE");
-            setActiveButton(btnEmployee);
-        });
-
-        btnProduct.addActionListener(e -> {
-            cardLayout.show(contentPanel, "PRODUCT");
-            setActiveButton(btnProduct);
-        });
-
-        btnBranch.addActionListener(e -> {
-            cardLayout.show(contentPanel, "BRANCH");
-            setActiveButton(btnBranch);
-        });
-
-
-
-        btnBatch.addActionListener(e -> {
-            cardLayout.show(contentPanel, "BATCH");
-            setActiveButton(btnBatch);
-        });
-
-        btnStock.addActionListener(e -> {
-            cardLayout.show(contentPanel, "STOCK");
-            setActiveButton(btnStock);
-        });
-
-        btnCreateInvoice.addActionListener(e -> {
-            cardLayout.show(contentPanel, "CREATE_INVOICE");
-            setActiveButton(btnCreateInvoice);
-        });
-
-        btnStatistics.addActionListener(e -> {
-            cardLayout.show(contentPanel, "STATISTICS");
-            setActiveButton(btnStatistics);
-        });
-
-        btnOption.addActionListener(e -> {
-            cardLayout.show(contentPanel, "OPTION");
-            setActiveButton(btnOption);
-        });
-
-        // set mặc định button đầu tiên sáng
-        setActiveButton(btnCategory);
+        // DEFAULT
+        currentActiveButton = btnCategory;
+        switchPanel("CATEGORY", btnCategory);
     }
 
-    // ===== METHOD HIGHLIGHT BUTTON =====
+    // ===== BUTTON =====
+    private JButton createMenuButton(String text, String icon) {
+        JButton btn = new JButton(icon + "  " + text) {
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g;
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+                g2.setColor(getBackground());
+                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 15, 15);
+
+                super.paintComponent(g);
+            }
+        };
+
+        btn.setMaximumSize(new Dimension(200, 45));
+        btn.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        btn.setContentAreaFilled(false);
+        btn.setFocusPainted(false);
+        btn.setBorderPainted(false);
+        btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
+
+        btn.setBackground(SIDEBAR_ITEM);
+        btn.setForeground(TEXT_LIGHT);
+
+        btn.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 14));
+        btn.setBorder(BorderFactory.createEmptyBorder(12, 20, 12, 20));
+
+        btn.setHorizontalAlignment(SwingConstants.LEFT);
+
+        // ===== HOVER =====
+        btn.addMouseListener(new MouseAdapter() {
+            public void mouseEntered(MouseEvent evt) {
+                if (btn != currentActiveButton) {
+                    btn.setBackground(SIDEBAR_HOVER);
+                }
+            }
+
+            public void mouseExited(MouseEvent evt) {
+                if (btn != currentActiveButton) {
+                    btn.setBackground(SIDEBAR_ITEM);
+                }
+            }
+        });
+
+        return btn;
+    }
+
+    // ===== SWITCH PANEL =====
+    private void switchPanel(String name, JButton btn) {
+        cardLayout.show(contentPanel, name);
+        currentActiveButton = btn;
+        setActiveButton(btn);
+    }
+
+    // ===== ACTIVE BUTTON =====
     private void setActiveButton(JButton activeBtn) {
         for (JButton btn : buttons) {
-            btn.setBackground(Color.WHITE);
-            btn.setForeground(Color.BLACK);
+            btn.setBackground(SIDEBAR_ITEM);
+            btn.setForeground(TEXT_LIGHT);
+            btn.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 14));
         }
 
-        activeBtn.setBackground(new Color(100, 149, 237)); // xanh đẹp
-        activeBtn.setForeground(Color.WHITE);
+        activeBtn.setBackground(SIDEBAR_ACTIVE);
+        activeBtn.setFont(new Font("Segoe UI Emoji", Font.BOLD, 14));
     }
 }

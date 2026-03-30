@@ -1,130 +1,298 @@
 package com.example.storemanagement.view;
 
 import com.example.storemanagement.controller.InvoiceController;
+import com.example.storemanagement.model.dto.InvoiceInputDTO;
+import com.example.storemanagement.model.dto.InvoiceItemDTO;
 import com.example.storemanagement.model.entity.*;
+import com.example.storemanagement.config.JpaUtil;
+import com.example.storemanagement.util.PdfGenerator;
+
+import jakarta.persistence.EntityManager;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
-public class InvoiceView extends JFrame {
+public class InvoiceView extends JPanel {
 
-    private JTable table;
-    private DefaultTableModel model;
+    // ===== COLORS =====
+    private final Color PRIMARY = new Color(33, 102, 140);
+    private final Color LIGHT_BG = new Color(240, 240, 240);
+    private final Color TABLE_HEADER = new Color(90, 90, 90);
+    private final Color BTN_ADD = new Color(40, 167, 69);
+    private final Color BTN_DELETE = new Color(220, 53, 69);
+    private final Color BTN_CREATE = new Color(255, 133, 27);
 
-    private JTextField txtProduct;
+    private JComboBox<Customer> cbCustomer;
+    private JComboBox<Employee> cbEmployee;
+    private JComboBox<Branch> cbBranch;
+    private JComboBox<Product> cbProduct;
+
     private JTextField txtQuantity;
     private JLabel lblTotal;
 
+    private JTable table;
+
+    private DefaultTableModel model;
+
     private InvoiceController controller = new InvoiceController();
 
-    private List<InvoiceDetail> details = new ArrayList<>();
-
     public InvoiceView() {
-        setTitle("Quản lý hóa đơn");
-        setSize(700, 500);
-        setLocationRelativeTo(null);
-        setDefaultCloseOperation(EXIT_ON_CLOSE);
+        setLayout(new BorderLayout(10, 10));
+        setBackground(LIGHT_BG);
 
-        initUI();
-    }
+        // ===== TOP =====
+        JPanel top = new JPanel(new GridLayout(2, 4, 10, 10));
+        top.setBackground(PRIMARY);
+        top.setBorder(BorderFactory.createTitledBorder(
+                BorderFactory.createLineBorder(Color.WHITE),
+                "Invoice Info",
+                0, 0,
+                new Font("Segoe UI", Font.BOLD, 14),
+                Color.WHITE
+        ));
 
-    private void initUI() {
-        JPanel panel = new JPanel(new BorderLayout());
+        cbCustomer = new JComboBox<>(loadCustomers());
+        cbEmployee = new JComboBox<>(loadEmployees());
+        cbBranch = new JComboBox<>(loadBranches());
+        cbProduct = new JComboBox<>(loadProducts());
 
-        // TOP INPUT
-        JPanel top = new JPanel();
-        txtProduct = new JTextField(10);
-        txtQuantity = new JTextField(5);
+        JLabel lb1 = new JLabel("Customer");
+        JLabel lb2 = new JLabel("Employee");
+        JLabel lb3 = new JLabel("Branch");
+        JLabel lb4 = new JLabel("Product");
 
-        JButton btnAdd = new JButton("Thêm");
+        lb1.setForeground(Color.WHITE);
+        lb2.setForeground(Color.WHITE);
+        lb3.setForeground(Color.WHITE);
+        lb4.setForeground(Color.WHITE);
 
-        top.add(new JLabel("ProductID"));
-        top.add(txtProduct);
-        top.add(new JLabel("Quantity"));
-        top.add(txtQuantity);
-        top.add(btnAdd);
+        top.add(lb1);
+        top.add(lb2);
+        top.add(lb3);
+        top.add(lb4);
 
-        panel.add(top, BorderLayout.NORTH);
+        top.add(cbCustomer);
+        top.add(cbEmployee);
+        top.add(cbBranch);
+        top.add(cbProduct);
 
-        // TABLE
-        model = new DefaultTableModel(new String[]{
-                "ProductID", "Quantity", "UnitPrice", "Total"
-        }, 0);
+        add(top, BorderLayout.NORTH);
+
+        // ===== TABLE (READ-ONLY) =====
+        model = new DefaultTableModel(
+                new String[]{"Product", "Qty", "Price", "Total"}, 0
+        ) {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return false; // ❌ KHÔNG cho sửa
+            }
+        };
 
         table = new JTable(model);
-        panel.add(new JScrollPane(table), BorderLayout.CENTER);
+        // ❌ không kéo giãn cột
+        table.getTableHeader().setResizingAllowed(false);
 
-        // BOTTOM
+        // ❌ không đổi vị trí cột
+        table.getTableHeader().setReorderingAllowed(false);
+
+        table.setRowHeight(25);
+        table.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        table.setGridColor(Color.LIGHT_GRAY);
+        table.setSelectionBackground(new Color(184, 207, 229));
+
+        table.getTableHeader().setBackground(TABLE_HEADER);
+        table.getTableHeader().setForeground(Color.WHITE);
+        table.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 14));
+
+        add(new JScrollPane(table), BorderLayout.CENTER);
+
+        // ===== BOTTOM =====
         JPanel bottom = new JPanel();
+        bottom.setBackground(LIGHT_BG);
+
+        txtQuantity = new JTextField(5);
+
+        JButton btnAdd = createButton("Add Item", BTN_ADD);
+        JButton btnRemove = createButton("Remove Item", BTN_DELETE);
+        JButton btnCreate = createButton("Create Invoice", BTN_CREATE);
 
         lblTotal = new JLabel("Total: 0");
-        JButton btnSave = new JButton("Lưu hóa đơn");
+        lblTotal.setFont(new Font("Segoe UI", Font.BOLD, 14));
 
+        bottom.add(new JLabel("Quantity:"));
+        bottom.add(txtQuantity);
+        bottom.add(btnAdd);
+        bottom.add(btnRemove);
+        bottom.add(btnCreate);
         bottom.add(lblTotal);
-        bottom.add(btnSave);
 
-        panel.add(bottom, BorderLayout.SOUTH);
+        add(bottom, BorderLayout.SOUTH);
 
-        add(panel);
-
-        // EVENT
-        btnAdd.addActionListener(e -> addProduct());
-        btnSave.addActionListener(e -> saveInvoice());
+        // ===== EVENTS =====
+        btnAdd.addActionListener(e -> addItem());
+        btnRemove.addActionListener(e -> removeItem());
+        btnCreate.addActionListener(e -> createInvoice());
     }
-    private void addProduct() {
+
+    // ===== BUTTON STYLE =====
+    private JButton createButton(String text, Color bg) {
+        JButton btn = new JButton(text);
+        btn.setBackground(bg);
+        btn.setForeground(Color.WHITE);
+        btn.setFocusPainted(false);
+        btn.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        btn.setPreferredSize(new Dimension(140, 40));
+        return btn;
+    }
+
+    // ===== LOAD DATA =====
+    private Customer[] loadCustomers() {
+        EntityManager em = JpaUtil.getEntityManager();
+        List<Customer> list = em.createQuery("FROM Customer", Customer.class).getResultList();
+        em.close();
+        return list.toArray(new Customer[0]);
+    }
+
+    private Employee[] loadEmployees() {
+        EntityManager em = JpaUtil.getEntityManager();
+        List<Employee> list = em.createQuery("FROM Employee", Employee.class).getResultList();
+        em.close();
+        return list.toArray(new Employee[0]);
+    }
+
+    private Branch[] loadBranches() {
+        EntityManager em = JpaUtil.getEntityManager();
+        List<Branch> list = em.createQuery("FROM Branch", Branch.class).getResultList();
+        em.close();
+        return list.toArray(new Branch[0]);
+    }
+
+    private Product[] loadProducts() {
+        EntityManager em = JpaUtil.getEntityManager();
+        List<Product> list = em.createQuery("FROM Product", Product.class).getResultList();
+        em.close();
+        return list.toArray(new Product[0]);
+    }
+
+    // ===== ADD ITEM =====
+    private void addItem() {
         try {
-            int productId = Integer.parseInt(txtProduct.getText());
-            int quantity = Integer.parseInt(txtQuantity.getText());
+            Product p = (Product) cbProduct.getSelectedItem();
+            Branch b = (Branch) cbBranch.getSelectedItem();
+            int qty = Integer.parseInt(txtQuantity.getText());
 
-            // giả lập giá
-            BigDecimal price = new BigDecimal("100");
+            if (qty <= 0) {
+                JOptionPane.showMessageDialog(this, "Quantity phải > 0");
+                return;
+            }
 
-            InvoiceDetail detail = new InvoiceDetail();
-            detail.setQuantity(quantity);
-            detail.setUnitPrice(price);
+            boolean ok = controller.checkStock(
+                    b.getBranchID().longValue(),
+                    Long.valueOf(p.getProductID()),
+                    qty
+            );
 
-            details.add(detail);
+            if (!ok) {
+                JOptionPane.showMessageDialog(this,
+                        "Không đủ hàng tại chi nhánh này!",
+                        "Cảnh báo",
+                        JOptionPane.WARNING_MESSAGE);
+                return;
+            }
 
-            BigDecimal total = price.multiply(BigDecimal.valueOf(quantity));
+            BigDecimal price = p.getUnitPrice();
+            BigDecimal total = price.multiply(BigDecimal.valueOf(qty));
 
-            model.addRow(new Object[]{
-                    productId, quantity, price, total
-            });
+            model.addRow(new Object[]{p, qty, price, total});
 
+            updateTotal();
+            txtQuantity.setText("");
+
+        } catch (NumberFormatException e) {
+            JOptionPane.showMessageDialog(this, "Quantity không hợp lệ!");
+        }
+    }
+
+    // ===== REMOVE =====
+    private void removeItem() {
+        int row = table.getSelectedRow();
+
+        if (row == -1) {
+            JOptionPane.showMessageDialog(this, "Chọn dòng để xóa!");
+            return;
+        }
+
+        model.removeRow(row);
+        updateTotal();
+    }
+
+    // ===== TOTAL =====
+    private void updateTotal() {
+        BigDecimal sum = BigDecimal.ZERO;
+
+        for (int i = 0; i < model.getRowCount(); i++) {
+            BigDecimal t = (BigDecimal) model.getValueAt(i, 3);
+            sum = sum.add(t);
+        }
+
+        lblTotal.setText("Total: " + sum);
+    }
+
+    // ===== CREATE INVOICE =====
+    private void createInvoice() {
+        try {
+            if (model.getRowCount() == 0) {
+                JOptionPane.showMessageDialog(this, "Chưa có sản phẩm!");
+                return;
+            }
+
+            Customer c = (Customer) cbCustomer.getSelectedItem();
+            Employee e = (Employee) cbEmployee.getSelectedItem();
+            Branch b = (Branch) cbBranch.getSelectedItem();
+
+            InvoiceInputDTO dto = new InvoiceInputDTO();
+            dto.setCustomerId(c.getCustomerID());
+            dto.setEmployeeId(e.getEmployeeID());
+            dto.setBranchId(b.getBranchID());
+            dto.setInvoiceDate(LocalDate.now());
+
+            List<InvoiceItemDTO> items = new ArrayList<>();
+
+            for (int i = 0; i < model.getRowCount(); i++) {
+                Product p = (Product) model.getValueAt(i, 0);
+                int qty = (int) model.getValueAt(i, 1);
+                BigDecimal price = (BigDecimal) model.getValueAt(i, 2);
+
+                items.add(new InvoiceItemDTO(
+                        p.getProductID(),
+                        qty,
+                        price.doubleValue()
+                ));
+            }
+
+            dto.setItems(items);
+
+            controller.createInvoice(dto);
+
+            String filePath = "invoice_" + System.currentTimeMillis() + ".pdf";
+            PdfGenerator.exportInvoice(dto, filePath);
+
+            JOptionPane.showMessageDialog(this,
+                    "Tạo hóa đơn thành công!\nPDF: " + filePath);
+
+            model.setRowCount(0);
             updateTotal();
 
         } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this, "Lỗi nhập dữ liệu");
+            JOptionPane.showMessageDialog(this,
+                    "Lỗi: " + ex.getMessage(),
+                    "Error",
+                    JOptionPane.ERROR_MESSAGE);
         }
-    }
-    private void updateTotal() {
-        BigDecimal total = BigDecimal.ZERO;
-
-        for (InvoiceDetail d : details) {
-            total = total.add(
-                    d.getUnitPrice()
-                            .multiply(BigDecimal.valueOf(d.getQuantity()))
-            );
-        }
-
-        lblTotal.setText("Total: " + total);
-    }
-    private void saveInvoice() {
-
-        Invoice invoice = new Invoice();
-        invoice.setDetails(details);
-
-        controller.createInvoice(invoice);
-
-        JOptionPane.showMessageDialog(this, "Lưu thành công!");
-
-        // reset
-        model.setRowCount(0);
-        details.clear();
-        lblTotal.setText("Total: 0");
     }
 }
