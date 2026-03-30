@@ -1,5 +1,6 @@
 package com.example.storemanagement.service;
 
+import com.example.storemanagement.model.dto.CustomerInvoiceDetailDTO;
 import com.example.storemanagement.model.dto.TopCustomerDTO;
 import com.example.storemanagement.model.dto.YearStatisticsDTO;
 
@@ -9,4 +10,5 @@ public interface ReportService {
     List<Integer> getAvailableYears();
     YearStatisticsDTO getYearStatistics(int year);
     List<TopCustomerDTO> getTopCustomersByMonth(int year, int month);
+    List<CustomerInvoiceDetailDTO> getCustomerInvoiceDetailsByMonth(int year, int month, int customerId);
 }

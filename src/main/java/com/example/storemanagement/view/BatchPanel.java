@@ -35,9 +35,12 @@ public class BatchPanel extends JPanel {
     private final Color TEXT = Color.WHITE;               // Chữ trắng
 
     public BatchPanel() {
-        setLayout(new BorderLayout(10, 10));
+        setLayout(new BorderLayout());
         setBackground(Color.WHITE);
-        setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+
+        JPanel content = new JPanel(new BorderLayout(10, 10));
+        content.setBackground(Color.WHITE);
+        content.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
         // ===== TOP FORM =====
         JPanel top = new JPanel(new GridBagLayout());
@@ -78,15 +81,12 @@ public class BatchPanel extends JPanel {
         innerForm.add(txtQuantity, gbc);
 
         top.add(innerForm);
-        add(top, BorderLayout.NORTH);
+        content.add(top, BorderLayout.NORTH);
 
-        // ===== CENTER (JSplitPane) =====
-        JSplitPane split = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
-        split.setDividerLocation(300);
-        split.setBorder(null);
-        split.setBackground(Color.WHITE);
-        split.setEnabled(false);
-        split.setDividerSize(5);
+        // ===== CENTER TABLES =====
+        JPanel tablesPanel = new JPanel();
+        tablesPanel.setLayout(new BoxLayout(tablesPanel, BoxLayout.Y_AXIS));
+        tablesPanel.setBackground(Color.WHITE);
 
         // --- BATCH TABLE (Bảng trên) ---
         modelBatch = new DefaultTableModel(
@@ -107,7 +107,11 @@ public class BatchPanel extends JPanel {
                 BorderFactory.createLineBorder(Color.BLACK, 2),
                 "Imported Batches", TitledBorder.LEFT, TitledBorder.TOP,
                 new Font("Segoe UI", Font.BOLD, 12), Color.BLACK));
-        split.setTopComponent(scrollBatch);
+        scrollBatch.setPreferredSize(new Dimension(0, 290));
+        scrollBatch.setMinimumSize(new Dimension(0, 290));
+        scrollBatch.setAlignmentX(Component.LEFT_ALIGNMENT);
+        tablesPanel.add(scrollBatch);
+        tablesPanel.add(Box.createVerticalStrut(10));
 
 
         // --- PRODUCT TABLE (Bảng dưới) ---
@@ -150,9 +154,12 @@ public class BatchPanel extends JPanel {
                 new Font("Segoe UI", Font.BOLD, 12), Color.BLACK));
 
         productPanel.add(scrollProduct, BorderLayout.CENTER);
+        productPanel.setPreferredSize(new Dimension(0, 250));
+        productPanel.setMinimumSize(new Dimension(0, 250));
+        productPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-        split.setBottomComponent(productPanel);
-        add(split, BorderLayout.CENTER);
+        tablesPanel.add(productPanel);
+        content.add(tablesPanel, BorderLayout.CENTER);
 
         // ===== BOTTOM BUTTONS =====
         JPanel buttons = new JPanel(new FlowLayout(FlowLayout.CENTER, 70, 15));
@@ -164,7 +171,15 @@ public class BatchPanel extends JPanel {
         buttons.add(btnAdd);
         buttons.add(btnDelete);
 
-        add(buttons, BorderLayout.SOUTH);
+        content.add(buttons, BorderLayout.SOUTH);
+
+        JScrollPane containerScroll = new JScrollPane(content);
+        containerScroll.setBorder(null);
+        containerScroll.getViewport().setBackground(Color.WHITE);
+        containerScroll.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
+        containerScroll.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED);
+
+        add(containerScroll, BorderLayout.CENTER);
 
         loadCombo();
         loadBatch();

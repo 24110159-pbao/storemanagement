@@ -2,6 +2,7 @@ package com.example.storemanagement.service.impl;
 
 import com.example.storemanagement.dao.ReportDAO;
 import com.example.storemanagement.dao.impl.ReportDAOImpl;
+import com.example.storemanagement.model.dto.CustomerInvoiceDetailDTO;
 import com.example.storemanagement.model.dto.RevenueDTO;
 import com.example.storemanagement.model.dto.TopCustomerDTO;
 import com.example.storemanagement.model.dto.YearStatisticsDTO;
@@ -47,6 +48,11 @@ public class ReportServiceImpl implements ReportService {
     @Override
     public List<TopCustomerDTO> getTopCustomersByMonth(int year, int month) {
         return reportDAO.findTopCustomersByMonth(year, month);
+    }
+
+    @Override
+    public List<CustomerInvoiceDetailDTO> getCustomerInvoiceDetailsByMonth(int year, int month, int customerId) {
+        return reportDAO.findCustomerInvoiceDetailsByMonth(year, month, customerId);
     }
 
     private List<RevenueDTO> normalizeMonthlyRevenue(List<RevenueDTO> rawRevenue) {

@@ -2,6 +2,7 @@ package com.example.storemanagement.dao.impl;
 
 import com.example.storemanagement.config.JpaUtil;
 import com.example.storemanagement.dao.ReportDAO;
+import com.example.storemanagement.model.dto.CustomerInvoiceDetailDTO;
 import com.example.storemanagement.model.dto.RevenueDTO;
 import com.example.storemanagement.model.dto.TopCustomerDTO;
 import com.example.storemanagement.model.dto.YearStatisticsDTO;
@@ -80,6 +81,32 @@ public class ReportDAOImpl implements ReportDAO {
                     TopCustomerDTO.class
             ).setParameter("year", year)
                     .setParameter("month", month)
+                    .getResultList();
+        } finally {
+            em.close();
+        }
+    }
+
+    @Override
+    public List<CustomerInvoiceDetailDTO> findCustomerInvoiceDetailsByMonth(int year, int month, int customerId) {
+        EntityManager em = JpaUtil.getEntityManager();
+        try {
+            return em.createQuery(
+                    "select new com.example.storemanagement.model.dto.CustomerInvoiceDetailDTO(" +
+                            "i.invoiceID, i.invoiceDate, p.productName, d.quantity, d.unitPrice, " +
+                            "(d.unitPrice * d.quantity), i.totalAmount) " +
+                            "from Invoice i " +
+                            "join i.customer c " +
+                            "join i.details d " +
+                            "join d.product p " +
+                            "where year(i.invoiceDate) = :year " +
+                            "and month(i.invoiceDate) = :month " +
+                            "and c.customerID = :customerId " +
+                            "order by i.invoiceDate desc, i.invoiceID desc, p.productName asc",
+                    CustomerInvoiceDetailDTO.class
+            ).setParameter("year", year)
+                    .setParameter("month", month)
+                    .setParameter("customerId", customerId)
                     .getResultList();
         } finally {
             em.close();

@@ -1,6 +1,7 @@
 package com.example.storemanagement.view;
 
 import com.example.storemanagement.controller.ReportController;
+import com.example.storemanagement.model.dto.CustomerInvoiceDetailDTO;
 import com.example.storemanagement.model.dto.RevenueDTO;
 import com.example.storemanagement.model.dto.TopCustomerDTO;
 import com.example.storemanagement.model.dto.YearStatisticsDTO;
@@ -54,8 +55,10 @@ public class ReportPanel extends JPanel {
     private final JTable customerTable = new JTable(customerModel);
     private final MonthlyPieChartPanel chartPanel = new MonthlyPieChartPanel();
     private final MonthCustomersDialog customerDialog;
+    private final CustomerInvoiceDetailsDialog invoiceDetailsDialog;
 
     private List<RevenueDTO> monthlyRevenue = new ArrayList<>();
+    private List<TopCustomerDTO> currentMonthCustomers = new ArrayList<>();
     private int selectedMonth = LocalDate.now().getMonthValue();
 
     public ReportPanel() {
@@ -68,6 +71,7 @@ public class ReportPanel extends JPanel {
 
         configureTable();
         customerDialog = new MonthCustomersDialog();
+        invoiceDetailsDialog = new CustomerInvoiceDetailsDialog();
         chartPanel.setMonthSelectionListener(this::handleMonthSelection);
         cboYear.addActionListener(e -> reloadSelectedYear());
         btnViewCustomers.addActionListener(e -> showCustomerDialog());
@@ -228,6 +232,16 @@ public class ReportPanel extends JPanel {
         header.setForeground(new Color(23, 44, 94));
         header.setFont(new Font("Segoe UI", Font.BOLD, 13));
         header.setReorderingAllowed(false);
+        customerTable.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                int viewRow = customerTable.rowAtPoint(e.getPoint());
+                if (viewRow >= 0) {
+                    customerTable.setRowSelectionInterval(viewRow, viewRow);
+                    openSelectedCustomerInvoices(viewRow);
+                }
+            }
+        });
     }
 
     private void loadYears() {
@@ -276,6 +290,7 @@ public class ReportPanel extends JPanel {
                 .orElse(new RevenueDTO(selectedMonth, BigDecimal.ZERO, 0));
         Integer year = (Integer) cboYear.getSelectedItem();
         List<TopCustomerDTO> customers = year == null ? List.of() : controller.getTopCustomersByMonth(year, selectedMonth);
+        currentMonthCustomers = customers;
 
         lblSelectedMonth.setText("Month " + selectedMonth + " - " + monthLabel(selectedMonth));
         lblSelectedRevenue.setText(formatMoney(monthData.getRevenue()));
@@ -297,6 +312,9 @@ public class ReportPanel extends JPanel {
         if (customerDialog.isVisible()) {
             customerDialog.refresh();
         }
+        if (invoiceDetailsDialog.isVisible()) {
+            invoiceDetailsDialog.reload();
+        }
     }
 
     private String monthLabel(int month) {
@@ -314,6 +332,15 @@ public class ReportPanel extends JPanel {
         customerDialog.refresh();
         customerDialog.setLocationRelativeTo(SwingUtilities.getWindowAncestor(this));
         customerDialog.setVisible(true);
+    }
+
+    private void openSelectedCustomerInvoices(int viewRow) {
+        int modelRow = customerTable.convertRowIndexToModel(viewRow);
+        if (modelRow < 0 || modelRow >= currentMonthCustomers.size()) {
+            return;
+        }
+        TopCustomerDTO customer = currentMonthCustomers.get(modelRow);
+        invoiceDetailsDialog.showForCustomer(customer);
     }
 
     private static class RoundedPanel extends JPanel {
@@ -400,6 +427,101 @@ public class ReportPanel extends JPanel {
             String yearText = year != null ? String.valueOf(year) : "--";
             lblDialogTitle.setText("Customers in month " + selectedMonth);
             lblDialogHint.setText(monthLabel(selectedMonth) + " / " + yearText + " - " + customerModel.getRowCount() + " customers");
+        }
+    }
+
+    private class CustomerInvoiceDetailsDialog extends JDialog {
+        private final JLabel lblTitle = new JLabel();
+        private final JLabel lblHint = new JLabel();
+        private final DefaultTableModel invoiceDetailsModel = new DefaultTableModel(
+                new String[]{"Invoice ID", "Date", "Product", "Qty", "Unit Price", "Line Total", "Invoice Total"}, 0
+        ) {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return false;
+            }
+        };
+        private final JTable invoiceDetailsTable = new JTable(invoiceDetailsModel);
+        private TopCustomerDTO selectedCustomer;
+
+        private CustomerInvoiceDetailsDialog() {
+            super(SwingUtilities.getWindowAncestor(ReportPanel.this), "Customer Invoice Details", Dialog.ModalityType.MODELESS);
+            setDefaultCloseOperation(WindowConstants.HIDE_ON_CLOSE);
+            setSize(920, 460);
+            setMinimumSize(new Dimension(780, 360));
+            setLayout(new BorderLayout(0, 14));
+            getContentPane().setBackground(new Color(245, 248, 255));
+
+            JPanel header = new JPanel();
+            header.setOpaque(false);
+            header.setBorder(new EmptyBorder(16, 18, 0, 18));
+            header.setLayout(new BoxLayout(header, BoxLayout.Y_AXIS));
+            lblTitle.setForeground(new Color(17, 37, 83));
+            lblTitle.setFont(new Font("Segoe UI", Font.BOLD, 22));
+            lblHint.setForeground(new Color(95, 109, 148));
+            lblHint.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+            header.add(lblTitle);
+            header.add(Box.createVerticalStrut(4));
+            header.add(lblHint);
+
+            invoiceDetailsTable.setRowHeight(30);
+            invoiceDetailsTable.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+            invoiceDetailsTable.setBackground(Color.WHITE);
+            invoiceDetailsTable.setForeground(new Color(35, 49, 86));
+            invoiceDetailsTable.setSelectionBackground(new Color(220, 232, 255));
+            invoiceDetailsTable.setSelectionForeground(new Color(20, 36, 72));
+            invoiceDetailsTable.setGridColor(new Color(231, 236, 246));
+            invoiceDetailsTable.setShowVerticalLines(false);
+            invoiceDetailsTable.setIntercellSpacing(new Dimension(0, 1));
+            JTableHeader headerTable = invoiceDetailsTable.getTableHeader();
+            headerTable.setBackground(new Color(230, 238, 255));
+            headerTable.setForeground(new Color(23, 44, 94));
+            headerTable.setFont(new Font("Segoe UI", Font.BOLD, 13));
+            headerTable.setReorderingAllowed(false);
+
+            JScrollPane scrollPane = new JScrollPane(invoiceDetailsTable);
+            scrollPane.setBorder(new EmptyBorder(0, 18, 18, 18));
+            scrollPane.getViewport().setBackground(Color.WHITE);
+
+            add(header, BorderLayout.NORTH);
+            add(scrollPane, BorderLayout.CENTER);
+        }
+
+        private void showForCustomer(TopCustomerDTO customer) {
+            this.selectedCustomer = customer;
+            reload();
+            setLocationRelativeTo(SwingUtilities.getWindowAncestor(ReportPanel.this));
+            setVisible(true);
+        }
+
+        private void reload() {
+            invoiceDetailsModel.setRowCount(0);
+            Integer year = (Integer) cboYear.getSelectedItem();
+
+            if (selectedCustomer == null || year == null) {
+                lblTitle.setText("Customer invoice details");
+                lblHint.setText("No customer selected");
+                return;
+            }
+
+            List<CustomerInvoiceDetailDTO> details = controller.getCustomerInvoiceDetailsByMonth(
+                    year, selectedMonth, selectedCustomer.getCustomerId()
+            );
+
+            for (CustomerInvoiceDetailDTO detail : details) {
+                invoiceDetailsModel.addRow(new Object[]{
+                        detail.getInvoiceId(),
+                        detail.getInvoiceDate() != null ? DATE.format(detail.getInvoiceDate()) : "--",
+                        detail.getProductName(),
+                        detail.getQuantity(),
+                        formatMoney(detail.getUnitPrice()),
+                        formatMoney(detail.getLineTotal()),
+                        formatMoney(detail.getInvoiceTotal())
+                });
+            }
+
+            lblTitle.setText("Invoices of " + selectedCustomer.getCustomerName());
+            lblHint.setText(monthLabel(selectedMonth) + " / " + year + " - " + details.size() + " item rows");
         }
     }
 
