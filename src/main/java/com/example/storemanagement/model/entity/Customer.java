@@ -65,6 +65,6 @@ public class Customer {
     // ===== toString =====
     @Override
     public String toString() {
-        return customerName;
+        return phone;
     }
 }

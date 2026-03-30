@@ -16,6 +16,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import org.jdesktop.swingx.autocomplete.AutoCompleteDecorator;
 
 public class InvoiceView extends JPanel {
 
@@ -60,6 +61,17 @@ public class InvoiceView extends JPanel {
         cbEmployee = new JComboBox<>(loadEmployees());
         cbBranch = new JComboBox<>(loadBranches());
         cbProduct = new JComboBox<>(loadProducts());
+
+        cbCustomer.setSelectedIndex(-1);
+        cbEmployee.setSelectedIndex(-1);
+        cbBranch.setSelectedIndex(-1);
+        cbProduct.setSelectedIndex(-1);
+
+        // bật autocomplete
+        AutoCompleteDecorator.decorate(cbCustomer);
+        AutoCompleteDecorator.decorate(cbEmployee);
+        AutoCompleteDecorator.decorate(cbBranch);
+        AutoCompleteDecorator.decorate(cbProduct);
 
         JLabel lb1 = new JLabel("Customer");
         JLabel lb2 = new JLabel("Employee");

@@ -73,6 +73,7 @@ public class Employee {
 
     @Override
     public String toString() {
-        return employeeName;
+        return employeeID + " - " + employeeName;
     }
+
 }
