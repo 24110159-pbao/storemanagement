@@ -290,4 +290,8 @@ public class ProductPanel extends JPanel {
         cbCategory.setSelectedIndex(-1);
         table.clearSelection();
     }
+    public void refreshData() {
+        loadCategories();
+        loadData();
+    }
 }

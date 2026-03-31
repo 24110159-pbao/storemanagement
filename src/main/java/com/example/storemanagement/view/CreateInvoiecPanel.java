@@ -18,7 +18,7 @@ import java.util.ArrayList;
 import java.util.List;
 import org.jdesktop.swingx.autocomplete.AutoCompleteDecorator;
 
-public class InvoiceView extends JPanel {
+public class CreateInvoiecPanel extends JPanel {
 
     // ===== COLORS =====
     private final Color PRIMARY = new Color(33, 102, 140);
@@ -42,7 +42,7 @@ public class InvoiceView extends JPanel {
 
     private InvoiceController controller = new InvoiceController();
 
-    public InvoiceView() {
+    public CreateInvoiecPanel() {
         setLayout(new BorderLayout(10, 10));
         setBackground(LIGHT_BG);
 
@@ -196,6 +196,10 @@ public class InvoiceView extends JPanel {
         try {
             Product p = (Product) cbProduct.getSelectedItem();
             Branch b = (Branch) cbBranch.getSelectedItem();
+            if (p == null || b == null) {
+                JOptionPane.showMessageDialog(this, "Chọn Product và Branch!");
+                return;
+            }
             int qty = Integer.parseInt(txtQuantity.getText());
 
             if (qty <= 0) {
@@ -306,5 +310,17 @@ public class InvoiceView extends JPanel {
                     "Error",
                     JOptionPane.ERROR_MESSAGE);
         }
+    }
+    public void refreshData() {
+
+        cbCustomer.setModel(new DefaultComboBoxModel<>(loadCustomers()));
+        cbEmployee.setModel(new DefaultComboBoxModel<>(loadEmployees()));
+        cbBranch.setModel(new DefaultComboBoxModel<>(loadBranches()));
+        cbProduct.setModel(new DefaultComboBoxModel<>(loadProducts()));
+
+        cbCustomer.setSelectedIndex(-1);
+        cbEmployee.setSelectedIndex(-1);
+        cbBranch.setSelectedIndex(-1);
+        cbProduct.setSelectedIndex(-1);
     }
 }

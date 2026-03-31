@@ -203,4 +203,8 @@ public class ProductStockPanel extends JPanel {
         if (selected instanceof Branch) loadProducts(((Branch) selected).getBranchID());
         else loadProducts(null);
     }
+    public void refreshData() {
+        loadBranches();
+        reload();
+    }
 }

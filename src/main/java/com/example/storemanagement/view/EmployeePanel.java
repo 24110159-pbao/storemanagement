@@ -299,4 +299,8 @@ public class EmployeePanel extends JPanel {
         cbBranch.setSelectedIndex(-1);
         table.clearSelection();
     }
+    public void refreshData() {
+        loadBranches();
+        loadData();
+    }
 }

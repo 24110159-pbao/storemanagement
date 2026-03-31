@@ -659,4 +659,8 @@ public class ReportPanel extends JPanel {
             g2.drawString(text, tx, ty);
         }
     }
+    public void refreshData() {
+        loadYears();
+        reloadSelectedYear();
+    }
 }

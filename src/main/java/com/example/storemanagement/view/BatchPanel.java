@@ -174,6 +174,7 @@ public class BatchPanel extends JPanel {
         content.add(buttons, BorderLayout.SOUTH);
 
         JScrollPane containerScroll = new JScrollPane(content);
+        containerScroll.getVerticalScrollBar().setUnitIncrement(16);
         containerScroll.setBorder(null);
         containerScroll.getViewport().setBackground(Color.WHITE);
         containerScroll.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
@@ -375,5 +376,10 @@ public class BatchPanel extends JPanel {
         for (Product p : productController.search(keyword)) {
             modelProduct.addRow(new Object[]{p.getProductID(), p.getProductName(), p.getUnitPrice()});
         }
+    }
+    public void refreshData() {
+        loadProduct();
+        loadBatch();
+        loadCombo();
     }
 }

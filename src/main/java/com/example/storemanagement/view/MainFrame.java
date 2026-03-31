@@ -14,11 +14,19 @@ public class MainFrame extends JFrame {
     private JButton[] buttons;
     private JButton currentActiveButton;
 
-    // ===== PURE BLACK THEME =====
-    private final Color SIDEBAR_BG = new Color(0, 0, 0);          // nền đen
-    private final Color SIDEBAR_ITEM = new Color(25, 25, 25);     // nút thường
-    private final Color SIDEBAR_HOVER = new Color(50, 50, 50);    // hover xám
-    private final Color SIDEBAR_ACTIVE = new Color(153, 0, 0);    // đỏ đậm
+    // === AUTO RELOAD =====
+    private EmployeePanel employeePanel;
+    private ProductPanel productPanel;
+    private BatchPanel batchPanel;
+    private ProductStockPanel productStockPanel;
+    private CreateInvoiecPanel createInvoiecPanel;
+    private ReportPanel reportPanel;
+
+    // ===== DARK THEME =====
+    private final Color SIDEBAR_BG = new Color(0, 0, 0);
+    private final Color SIDEBAR_ITEM = new Color(25, 25, 25);
+    private final Color SIDEBAR_HOVER = new Color(50, 50, 50);
+    private final Color SIDEBAR_ACTIVE = new Color(153, 0, 0);
 
     private final Color CONTENT_BG = Color.BLACK;
     private final Color TEXT_LIGHT = Color.WHITE;
@@ -37,10 +45,14 @@ public class MainFrame extends JFrame {
 
         UIManager.put("defaultFont", new Font("Segoe UI Emoji", Font.PLAIN, 14));
 
+        // ===== STYLE SCROLLBAR =====
+        UIManager.put("ScrollBar.thumb", new Color(80, 80, 80));
+        UIManager.put("ScrollBar.track", SIDEBAR_BG);
+        UIManager.put("ScrollBar.width", 8);
+
         // ===== SIDEBAR =====
         sidebar = new JPanel();
         sidebar.setLayout(new BoxLayout(sidebar, BoxLayout.Y_AXIS));
-        sidebar.setPreferredSize(new Dimension(220, 0));
         sidebar.setBackground(SIDEBAR_BG);
         sidebar.setBorder(BorderFactory.createEmptyBorder(15, 10, 15, 10));
 
@@ -48,18 +60,25 @@ public class MainFrame extends JFrame {
         JButton btnCategory = createMenuButton("Category", "📁");
         JButton btnSupplier = createMenuButton("Supplier", "🚚");
         JButton btnCustomer = createMenuButton("Customer", "👤");
+        JButton btnBranch = createMenuButton("Branch", "🏢");
         JButton btnEmployee = createMenuButton("Employee", "👨‍💼");
         JButton btnProduct = createMenuButton("Product", "📦");
-        JButton btnBranch = createMenuButton("Branch", "🏢");
         JButton btnBatch = createMenuButton("Batch", "🧾");
         JButton btnStock = createMenuButton("Product Stock", "📊");
         JButton btnCreateInvoice = createMenuButton("Create Invoice", "🧮");
         JButton btnStatistics = createMenuButton("Statistics", "📈");
 
+        // ===== ORDER FIXED =====
         buttons = new JButton[]{
-                btnCategory, btnSupplier, btnCustomer,
-                btnEmployee, btnProduct, btnBranch,
-                btnBatch, btnStock, btnCreateInvoice,
+                btnCategory,
+                btnSupplier,
+                btnCustomer,
+                btnBranch,
+                btnEmployee,
+                btnProduct,
+                btnBatch,
+                btnStock,
+                btnCreateInvoice,
                 btnStatistics
         };
 
@@ -68,7 +87,16 @@ public class MainFrame extends JFrame {
             sidebar.add(btn);
         }
 
-        add(sidebar, BorderLayout.WEST);
+        // ===== SCROLL =====
+        JScrollPane scrollPane = new JScrollPane(sidebar);
+        scrollPane.getVerticalScrollBar().setUnitIncrement(16);
+        scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+        scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+        scrollPane.setBorder(null);
+        scrollPane.getViewport().setBackground(SIDEBAR_BG);
+        scrollPane.setPreferredSize(new Dimension(220, 0));
+
+        add(scrollPane, BorderLayout.WEST);
 
         // ===== CONTENT =====
         cardLayout = new CardLayout();
@@ -78,13 +106,25 @@ public class MainFrame extends JFrame {
         contentPanel.add(new CategoryPanel(), "CATEGORY");
         contentPanel.add(new SupplierPanel(), "SUPPLIER");
         contentPanel.add(new CustomerPanel(), "CUSTOMER");
-        contentPanel.add(new EmployeePanel(), "EMPLOYEE");
-        contentPanel.add(new ProductPanel(), "PRODUCT");
         contentPanel.add(new BranchPanel(), "BRANCH");
-        contentPanel.add(new BatchPanel(), "BATCH");
-        contentPanel.add(new ProductStockPanel(), "STOCK");
-        contentPanel.add(new InvoiceView(), "CREATE_INVOICE");
-        contentPanel.add(new ReportPanel(), "STATISTICS");
+
+        employeePanel = new EmployeePanel();
+        contentPanel.add(employeePanel, "EMPLOYEE");
+
+        productPanel = new ProductPanel();
+        contentPanel.add(productPanel, "PRODUCT");
+
+        batchPanel = new BatchPanel();
+        contentPanel.add(batchPanel, "BATCH");
+
+        productStockPanel = new ProductStockPanel();
+        contentPanel.add(productStockPanel, "STOCK");
+
+        createInvoiecPanel = new CreateInvoiecPanel();
+        contentPanel.add(createInvoiecPanel, "CREATE_INVOICE");
+
+        reportPanel = new ReportPanel();
+        contentPanel.add(reportPanel, "STATISTICS");
 
         add(contentPanel, BorderLayout.CENTER);
 
@@ -92,13 +132,37 @@ public class MainFrame extends JFrame {
         btnCategory.addActionListener(e -> switchPanel("CATEGORY", btnCategory));
         btnSupplier.addActionListener(e -> switchPanel("SUPPLIER", btnSupplier));
         btnCustomer.addActionListener(e -> switchPanel("CUSTOMER", btnCustomer));
-        btnEmployee.addActionListener(e -> switchPanel("EMPLOYEE", btnEmployee));
-        btnProduct.addActionListener(e -> switchPanel("PRODUCT", btnProduct));
         btnBranch.addActionListener(e -> switchPanel("BRANCH", btnBranch));
-        btnBatch.addActionListener(e -> switchPanel("BATCH", btnBatch));
-        btnStock.addActionListener(e -> switchPanel("STOCK", btnStock));
-        btnCreateInvoice.addActionListener(e -> switchPanel("CREATE_INVOICE", btnCreateInvoice));
-        btnStatistics.addActionListener(e -> switchPanel("STATISTICS", btnStatistics));
+
+        btnEmployee.addActionListener(e -> {
+            switchPanel("EMPLOYEE", btnEmployee);
+            employeePanel.refreshData();
+        });
+
+        btnProduct.addActionListener(e -> {
+            switchPanel("PRODUCT", btnProduct);
+            productPanel.refreshData();
+        });
+
+        btnBatch.addActionListener(e -> {
+            switchPanel("BATCH", btnBatch);
+            batchPanel.refreshData();
+        });
+
+        btnStock.addActionListener(e -> {
+            switchPanel("STOCK", btnStock);
+            productStockPanel.refreshData();
+        });
+
+        btnCreateInvoice.addActionListener(e -> {
+            switchPanel("CREATE_INVOICE", btnCreateInvoice);
+            createInvoiecPanel.refreshData();
+        });
+
+        btnStatistics.addActionListener(e -> {
+            switchPanel("STATISTICS", btnStatistics);
+            reportPanel.refreshData();
+        });
 
         // DEFAULT
         currentActiveButton = btnCategory;
@@ -135,7 +199,7 @@ public class MainFrame extends JFrame {
 
         btn.setHorizontalAlignment(SwingConstants.LEFT);
 
-        // ===== HOVER =====
+        // HOVER
         btn.addMouseListener(new MouseAdapter() {
             public void mouseEntered(MouseEvent evt) {
                 if (btn != currentActiveButton) {

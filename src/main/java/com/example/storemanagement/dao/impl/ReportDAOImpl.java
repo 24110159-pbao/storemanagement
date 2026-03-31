@@ -94,7 +94,7 @@ public class ReportDAOImpl implements ReportDAO {
             return em.createQuery(
                     "select new com.example.storemanagement.model.dto.CustomerInvoiceDetailDTO(" +
                             "i.invoiceID, i.invoiceDate, p.productName, d.quantity, d.unitPrice, " +
-                            "(d.unitPrice * d.quantity), i.totalAmount) " +
+                            "CAST(d.unitPrice * d.quantity AS bigdecimal), i.totalAmount) " +
                             "from Invoice i " +
                             "join i.customer c " +
                             "join i.details d " +
