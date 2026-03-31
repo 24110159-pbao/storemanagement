@@ -23,13 +23,13 @@ public class MainFrame extends JFrame {
     private ReportPanel reportPanel;
 
     // ===== DARK THEME =====
-    private final Color SIDEBAR_BG = new Color(0, 0, 0);
-    private final Color SIDEBAR_ITEM = new Color(25, 25, 25);
-    private final Color SIDEBAR_HOVER = new Color(50, 50, 50);
-    private final Color SIDEBAR_ACTIVE = new Color(153, 0, 0);
+    private final Color SIDEBAR_BG = new Color(20, 55, 95);       // xanh navy sáng hơn
+    private final Color SIDEBAR_ITEM = new Color(35, 75, 125);    // item rõ hơn
+    private final Color SIDEBAR_HOVER = new Color(55, 105, 165);  // hover sáng nổi bật
+    private final Color SIDEBAR_ACTIVE = new Color(0, 150, 255);  // xanh sáng (accent đẹp)
 
-    private final Color CONTENT_BG = Color.BLACK;
-    private final Color TEXT_LIGHT = Color.WHITE;
+    private final Color CONTENT_BG = new Color(15, 45, 80);       // nền content sáng nhẹ
+    private final Color TEXT_LIGHT = new Color(240, 248, 255);    // gần trắng, dịu mắt
 
     public MainFrame() {
         setTitle("Sales Management System");
@@ -55,6 +55,25 @@ public class MainFrame extends JFrame {
         sidebar.setLayout(new BoxLayout(sidebar, BoxLayout.Y_AXIS));
         sidebar.setBackground(SIDEBAR_BG);
         sidebar.setBorder(BorderFactory.createEmptyBorder(15, 10, 15, 10));
+
+        ImageIcon icon = new ImageIcon(
+                "src/main/java/com/example/storemanagement/view/images/domixi.png"
+        );
+
+        int width = 120;
+        int originalWidth = icon.getIconWidth();
+        int originalHeight = icon.getIconHeight();
+
+        int height = (width * originalHeight) / originalWidth;
+
+        Image img = icon.getImage().getScaledInstance(width, height, Image.SCALE_SMOOTH);
+        JLabel logoLabel = new JLabel(new ImageIcon(img));
+        logoLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        logoLabel.setBorder(BorderFactory.createEmptyBorder(10, 0, 10, 0));
+
+        sidebar.add(Box.createVerticalStrut(10));
+        sidebar.add(logoLabel);
+        sidebar.add(Box.createVerticalStrut(20));
 
         // ===== BUTTONS =====
         JButton btnCategory = createMenuButton("Category", "📁");
@@ -102,6 +121,7 @@ public class MainFrame extends JFrame {
         cardLayout = new CardLayout();
         contentPanel = new JPanel(cardLayout);
         contentPanel.setBackground(CONTENT_BG);
+
 
         contentPanel.add(new CategoryPanel(), "CATEGORY");
         contentPanel.add(new SupplierPanel(), "SUPPLIER");
