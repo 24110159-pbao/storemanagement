@@ -14,17 +14,27 @@ public class InvoiceDetailDAOImpl implements InvoiceDetailDAO {
 
     @Override
     public void save(InvoiceDetail detail) {
+        // Tạo EntityManager
         EntityManager em = JpaUtil.getEntityManager();
         EntityTransaction tx = em.getTransaction();
 
         try {
             tx.begin();
+
+            // persist(): thêm mới chi tiết hóa đơn
             em.persist(detail);
+
             tx.commit();
+
         } catch (Exception e) {
-            tx.rollback();
+            // Rollback nếu có lỗi
+            if (tx.isActive()) {
+                tx.rollback();
+            }
             throw e;
+
         } finally {
+            // Đóng EntityManager để tránh leak
             em.close();
         }
     }
@@ -33,14 +43,20 @@ public class InvoiceDetailDAOImpl implements InvoiceDetailDAO {
     public List<InvoiceDetail> findByInvoiceId(Integer invoiceId) {
         EntityManager em = JpaUtil.getEntityManager();
 
-        List<InvoiceDetail> list = em.createQuery(
-                        "SELECT d FROM InvoiceDetail d WHERE d.invoice.invoiceID = :id",
-                        InvoiceDetail.class
-                ).setParameter("id", invoiceId)
-                .getResultList();
+        try {
+            // JPQL: lấy tất cả chi tiết của một hóa đơn
+            // d.invoice.invoiceID: truy cập khóa chính của entity Invoice liên kết
+            // :id là parameter binding → tránh SQL injection
+            return em.createQuery(
+                            "SELECT d FROM InvoiceDetail d WHERE d.invoice.invoiceID = :id",
+                            InvoiceDetail.class
+                    )
+                    .setParameter("id", invoiceId)
+                    .getResultList();
 
-        em.close();
-        return list;
+        } finally {
+            em.close(); // Luôn close để tránh leak
+        }
     }
 
     @Override
@@ -50,11 +66,24 @@ public class InvoiceDetailDAOImpl implements InvoiceDetailDAO {
 
         try {
             tx.begin();
+
+            // Tìm entity theo composite key (InvoiceDetailId)
             InvoiceDetail d = em.find(InvoiceDetail.class, id);
-            if (d != null) em.remove(d);
+
+            // Nếu tồn tại → remove()
+            if (d != null) {
+                em.remove(d);
+            }
+
             tx.commit();
+
         } catch (Exception e) {
-            tx.rollback();
+            // Rollback nếu lỗi
+            if (tx.isActive()) {
+                tx.rollback();
+            }
+            throw e;
+
         } finally {
             em.close();
         }

@@ -2,6 +2,8 @@ package com.example.storemanagement.view;
 
 import com.example.storemanagement.controller.ReportController;
 import com.example.storemanagement.model.dto.CustomerInvoiceDetailDTO;
+import com.example.storemanagement.model.dto.MonthlyProfitDTO;
+import com.example.storemanagement.model.dto.ProfitReportDTO;
 import com.example.storemanagement.model.dto.RevenueDTO;
 import com.example.storemanagement.model.dto.TopCustomerDTO;
 import com.example.storemanagement.model.dto.YearStatisticsDTO;
@@ -17,6 +19,7 @@ import java.awt.geom.Arc2D;
 import java.awt.geom.Area;
 import java.awt.geom.Ellipse2D;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.text.NumberFormat;
 import java.time.LocalDate;
 import java.time.Month;
@@ -39,11 +42,21 @@ public class ReportPanel extends JPanel {
     private final JLabel lblInvoiceCount = new JLabel();
     private final JLabel lblCustomerCount = new JLabel();
     private final JLabel lblBestMonth = new JLabel();
+    private final JLabel lblTotalProfit = new JLabel();
     private final JLabel lblSelectedMonth = new JLabel();
     private final JLabel lblSelectedRevenue = new JLabel();
+    private final JLabel lblSelectedSalary = new JLabel();
+    private final JLabel lblSelectedProfit = new JLabel();
     private final JLabel lblSelectedInvoices = new JLabel();
     private final JLabel lblSelectedCustomers = new JLabel();
+    private final MonthStatRow rowSelectedRevenue = new MonthStatRow("Revenue");
+    private final MonthStatRow rowSelectedSalary = new MonthStatRow("Salary Expense");
+    private final MonthStatRow rowSelectedProfit = new MonthStatRow("Profit");
+    private final MonthStatRow rowSelectedInvoices = new MonthStatRow("Invoices");
+    private final MonthStatRow rowSelectedCustomers = new MonthStatRow("Customers");
     private final JButton btnViewCustomers = new ActionButton("View Customers");
+    private final JButton btnViewProfitSummary = new ActionButton("Profit Summary");
+    private final JButton btnOpenProfitChart = new ActionButton("Profit Chart");
     private final DefaultTableModel customerModel = new DefaultTableModel(
             new String[]{"ID", "Customer", "Phone", "Invoices", "Total Spent", "Last Purchase"}, 0
     ) {
@@ -54,11 +67,15 @@ public class ReportPanel extends JPanel {
     };
     private final JTable customerTable = new JTable(customerModel);
     private final MonthlyPieChartPanel chartPanel = new MonthlyPieChartPanel();
+    private final JPanel monthDetailCard = new JPanel(new BorderLayout(0, 18));
     private final MonthCustomersDialog customerDialog;
     private final CustomerInvoiceDetailsDialog invoiceDetailsDialog;
+    private final ProfitSummaryDialog profitSummaryDialog;
+    private final ProfitChartFrame profitChartFrame;
 
     private List<RevenueDTO> monthlyRevenue = new ArrayList<>();
     private List<TopCustomerDTO> currentMonthCustomers = new ArrayList<>();
+    private ProfitReportDTO currentProfitReport = new ProfitReportDTO(LocalDate.now().getYear());
     private int selectedMonth = LocalDate.now().getMonthValue();
 
     public ReportPanel() {
@@ -72,9 +89,13 @@ public class ReportPanel extends JPanel {
         configureTable();
         customerDialog = new MonthCustomersDialog();
         invoiceDetailsDialog = new CustomerInvoiceDetailsDialog();
+        profitSummaryDialog = new ProfitSummaryDialog();
+        profitChartFrame = new ProfitChartFrame();
         chartPanel.setMonthSelectionListener(this::handleMonthSelection);
         cboYear.addActionListener(e -> reloadSelectedYear());
         btnViewCustomers.addActionListener(e -> showCustomerDialog());
+        btnViewProfitSummary.addActionListener(e -> showProfitSummaryDialog());
+        btnOpenProfitChart.addActionListener(e -> showProfitChartFrame());
         loadYears();
     }
 
@@ -88,7 +109,7 @@ public class ReportPanel extends JPanel {
         JLabel title = new JLabel("Annual Statistics Dashboard");
         title.setForeground(Color.WHITE);
         title.setFont(new Font("Segoe UI", Font.BOLD, 28));
-        JLabel subtitle = new JLabel("View yearly statistics with a 12-month pie chart and customers for the selected month.");
+        JLabel subtitle = new JLabel("View yearly statistics, monthly profit after salary, and a 12-month chart.");
         subtitle.setForeground(new Color(194, 208, 255));
         subtitle.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         text.add(title);
@@ -116,12 +137,13 @@ public class ReportPanel extends JPanel {
         JPanel center = new JPanel(new BorderLayout(18, 18));
         center.setOpaque(false);
 
-        JPanel metrics = new JPanel(new GridLayout(1, 4, 16, 0));
+        JPanel metrics = new JPanel(new GridLayout(1, 5, 16, 0));
         metrics.setOpaque(false);
         metrics.add(createMetricCard("Annual Revenue", lblTotalRevenue));
         metrics.add(createMetricCard("Invoices", lblInvoiceCount));
         metrics.add(createMetricCard("Active Customers", lblCustomerCount));
         metrics.add(createMetricCard("Top Month", lblBestMonth));
+        metrics.add(createMetricCard("Annual Profit", lblTotalProfit));
 
         JPanel top = new JPanel(new GridLayout(1, 2, 18, 0));
         top.setOpaque(false);
@@ -178,8 +200,15 @@ public class ReportPanel extends JPanel {
 
         lblSelectedMonth.setForeground(Color.WHITE);
         lblSelectedMonth.setFont(new Font("Segoe UI", Font.BOLD, 24));
+        lblSelectedMonth.setText("Month " + selectedMonth + " - " + monthLabel(selectedMonth));
         JLabel subtitle = new JLabel("Details for the month selected from the chart");
         subtitle.setForeground(new Color(186, 198, 236));
+
+        lblSelectedRevenue.setText(formatMoney(BigDecimal.ZERO));
+        lblSelectedSalary.setText(formatMoney(BigDecimal.ZERO));
+        lblSelectedProfit.setText(formatMoney(BigDecimal.ZERO));
+        lblSelectedInvoices.setText("0");
+        lblSelectedCustomers.setText("0");
 
         JPanel header = new JPanel();
         header.setOpaque(false);
@@ -188,32 +217,31 @@ public class ReportPanel extends JPanel {
         header.add(Box.createVerticalStrut(6));
         header.add(subtitle);
 
-        JPanel stats = new JPanel(new GridLayout(3, 1, 0, 12));
+        JPanel stats = new JPanel(new GridLayout(5, 1, 0, 12));
         stats.setOpaque(false);
-        stats.add(createMonthRow("Revenue", lblSelectedRevenue));
-        stats.add(createMonthRow("Invoices", lblSelectedInvoices));
-        stats.add(createMonthRow("Customers", lblSelectedCustomers));
+        stats.add(createMonthRow(rowSelectedRevenue));
+        stats.add(createMonthRow(rowSelectedSalary));
+        stats.add(createMonthRow(rowSelectedProfit));
+        stats.add(createMonthRow(rowSelectedInvoices));
+        stats.add(createMonthRow(rowSelectedCustomers));
 
-        JPanel actions = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
+        JPanel actions = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
         actions.setOpaque(false);
         actions.add(btnViewCustomers);
+        actions.add(btnViewProfitSummary);
+        actions.add(btnOpenProfitChart);
 
-        panel.add(header, BorderLayout.NORTH);
-        panel.add(stats, BorderLayout.CENTER);
-        panel.add(actions, BorderLayout.SOUTH);
+        monthDetailCard.setOpaque(false);
+        monthDetailCard.add(header, BorderLayout.NORTH);
+        monthDetailCard.add(stats, BorderLayout.CENTER);
+        monthDetailCard.add(actions, BorderLayout.SOUTH);
+
+        panel.add(monthDetailCard, BorderLayout.CENTER);
         return panel;
     }
 
-    private JComponent createMonthRow(String text, JLabel value) {
-        RoundedPanel row = new RoundedPanel(new BorderLayout(), 18, new Color(26, 50, 109));
-        row.setBorder(new EmptyBorder(14, 16, 14, 16));
-        JLabel label = new JLabel(text);
-        label.setForeground(new Color(188, 201, 240));
-        label.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-        value.setForeground(Color.WHITE);
-        value.setFont(new Font("Segoe UI", Font.BOLD, 16));
-        row.add(label, BorderLayout.WEST);
-        row.add(value, BorderLayout.EAST);
+    private JComponent createMonthRow(MonthStatRow row) {
+        row.setValueText("--");
         return row;
     }
 
@@ -266,18 +294,25 @@ public class ReportPanel extends JPanel {
 
     private void loadReport(int year) {
         YearStatisticsDTO statistics = controller.getYearStatistics(year);
+        currentProfitReport = controller.getProfitReportByYear(year);
         monthlyRevenue = statistics.getMonthlyRevenues();
-        selectedMonth = statistics.getBestMonth() >= 1 ? statistics.getBestMonth() : LocalDate.now().getMonthValue();
+        if (selectedMonth < 1 || selectedMonth > 12) {
+            selectedMonth = statistics.getBestMonth() >= 1 ? statistics.getBestMonth() : LocalDate.now().getMonthValue();
+        }
         chartPanel.setData(monthlyRevenue, selectedMonth);
 
         lblTotalRevenue.setText(formatMoney(statistics.getTotalRevenue()));
         lblInvoiceCount.setText(String.valueOf(statistics.getTotalInvoices()));
         lblCustomerCount.setText(String.valueOf(statistics.getTotalCustomers()));
         lblBestMonth.setText(monthLabel(statistics.getBestMonth()));
+        lblTotalProfit.setText(formatMoney(statistics.getTotalProfit()));
         updateSelectedMonthView();
     }
 
     private void handleMonthSelection(int month) {
+        if (month < 1 || month > 12) {
+            return;
+        }
         selectedMonth = month;
         chartPanel.setSelectedMonth(month);
         updateSelectedMonthView();
@@ -288,14 +323,30 @@ public class ReportPanel extends JPanel {
                 .filter(item -> item.getMonth() == selectedMonth)
                 .findFirst()
                 .orElse(new RevenueDTO(selectedMonth, BigDecimal.ZERO, 0));
+        List<MonthlyProfitDTO> monthlyProfits = currentProfitReport != null
+                ? currentProfitReport.getMonthlyProfits()
+                : List.of();
+        MonthlyProfitDTO profitData = monthlyProfits.stream()
+                .filter(item -> item.getMonth() == selectedMonth)
+                .findFirst()
+                .orElse(new MonthlyProfitDTO(selectedMonth, monthData.getRevenue(), BigDecimal.ZERO, monthData.getInvoiceCount()));
         Integer year = (Integer) cboYear.getSelectedItem();
         List<TopCustomerDTO> customers = year == null ? List.of() : controller.getTopCustomersByMonth(year, selectedMonth);
         currentMonthCustomers = customers;
 
         lblSelectedMonth.setText("Month " + selectedMonth + " - " + monthLabel(selectedMonth));
         lblSelectedRevenue.setText(formatMoney(monthData.getRevenue()));
+        lblSelectedSalary.setText(formatMoney(profitData.getSalaryExpense()));
+        lblSelectedProfit.setText(formatMoney(profitData.getProfit()));
         lblSelectedInvoices.setText(String.valueOf(monthData.getInvoiceCount()));
         lblSelectedCustomers.setText(String.valueOf(customers.size()));
+        rowSelectedRevenue.setValueText(lblSelectedRevenue.getText());
+        rowSelectedSalary.setValueText(lblSelectedSalary.getText());
+        rowSelectedProfit.setValueText(lblSelectedProfit.getText());
+        rowSelectedInvoices.setValueText(lblSelectedInvoices.getText());
+        rowSelectedCustomers.setValueText(lblSelectedCustomers.getText());
+        monthDetailCard.revalidate();
+        monthDetailCard.repaint();
 
         customerModel.setRowCount(0);
         for (TopCustomerDTO customer : customers) {
@@ -315,6 +366,17 @@ public class ReportPanel extends JPanel {
         if (invoiceDetailsDialog.isVisible()) {
             invoiceDetailsDialog.reload();
         }
+        if (profitSummaryDialog.isVisible()) {
+            profitSummaryDialog.refresh();
+        }
+        if (profitChartFrame.isVisible()) {
+            profitChartFrame.refresh();
+        }
+
+        monthDetailCard.revalidate();
+        monthDetailCard.repaint();
+        revalidate();
+        repaint();
     }
 
     private String monthLabel(int month) {
@@ -332,6 +394,18 @@ public class ReportPanel extends JPanel {
         customerDialog.refresh();
         customerDialog.setLocationRelativeTo(SwingUtilities.getWindowAncestor(this));
         customerDialog.setVisible(true);
+    }
+
+    private void showProfitSummaryDialog() {
+        profitSummaryDialog.refresh();
+        profitSummaryDialog.setLocationRelativeTo(SwingUtilities.getWindowAncestor(this));
+        profitSummaryDialog.setVisible(true);
+    }
+
+    private void showProfitChartFrame() {
+        profitChartFrame.refresh();
+        profitChartFrame.setLocationRelativeTo(SwingUtilities.getWindowAncestor(this));
+        profitChartFrame.setVisible(true);
     }
 
     private void openSelectedCustomerInvoices(int viewRow) {
@@ -364,6 +438,47 @@ public class ReportPanel extends JPanel {
             g2.fillRoundRect(0, 0, getWidth(), getHeight() - 3, radius, radius);
             g2.dispose();
             super.paintComponent(g);
+        }
+    }
+
+    private static class MonthStatRow extends JPanel {
+        private final String labelText;
+        private String valueText = "--";
+
+        private MonthStatRow(String labelText) {
+            this.labelText = labelText;
+            setOpaque(false);
+            setPreferredSize(new Dimension(0, 54));
+        }
+
+        private void setValueText(String valueText) {
+            this.valueText = (valueText == null || valueText.isBlank()) ? "--" : valueText;
+            repaint();
+        }
+
+        @Override
+        protected void paintComponent(Graphics g) {
+            super.paintComponent(g);
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            g2.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+
+            g2.setColor(new Color(26, 50, 109));
+            g2.fillRoundRect(0, 0, getWidth(), getHeight(), 18, 18);
+
+            g2.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+            g2.setColor(new Color(188, 201, 240));
+            FontMetrics leftMetrics = g2.getFontMetrics();
+            int textY = (getHeight() - leftMetrics.getHeight()) / 2 + leftMetrics.getAscent();
+            g2.drawString(labelText, 16, textY);
+
+            g2.setFont(new Font("Segoe UI", Font.BOLD, 16));
+            g2.setColor(Color.WHITE);
+            FontMetrics rightMetrics = g2.getFontMetrics();
+            int valueX = Math.max(16, getWidth() - 16 - rightMetrics.stringWidth(valueText));
+            int valueY = (getHeight() - rightMetrics.getHeight()) / 2 + rightMetrics.getAscent();
+            g2.drawString(valueText, valueX, valueY);
+            g2.dispose();
         }
     }
 
@@ -525,6 +640,125 @@ public class ReportPanel extends JPanel {
         }
     }
 
+    private class ProfitSummaryDialog extends JDialog {
+        private final JLabel lblTitle = new JLabel();
+        private final JLabel lblHint = new JLabel();
+        private final DefaultTableModel profitModel = new DefaultTableModel(
+                new String[]{"Month", "Revenue", "Salary Expense", "Profit", "Invoices"}, 0
+        ) {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return false;
+            }
+        };
+        private final JTable profitTable = new JTable(profitModel);
+
+        private ProfitSummaryDialog() {
+            super(SwingUtilities.getWindowAncestor(ReportPanel.this), "Monthly Profit Summary", Dialog.ModalityType.MODELESS);
+            setDefaultCloseOperation(WindowConstants.HIDE_ON_CLOSE);
+            setSize(860, 460);
+            setMinimumSize(new Dimension(760, 360));
+            setLayout(new BorderLayout(0, 14));
+            getContentPane().setBackground(new Color(245, 248, 255));
+
+            JPanel header = new JPanel();
+            header.setOpaque(false);
+            header.setBorder(new EmptyBorder(16, 18, 0, 18));
+            header.setLayout(new BoxLayout(header, BoxLayout.Y_AXIS));
+            lblTitle.setForeground(new Color(17, 37, 83));
+            lblTitle.setFont(new Font("Segoe UI", Font.BOLD, 22));
+            lblHint.setForeground(new Color(95, 109, 148));
+            lblHint.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+            header.add(lblTitle);
+            header.add(Box.createVerticalStrut(4));
+            header.add(lblHint);
+
+            profitTable.setRowHeight(30);
+            profitTable.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+            profitTable.setBackground(Color.WHITE);
+            profitTable.setForeground(new Color(35, 49, 86));
+            profitTable.setSelectionBackground(new Color(220, 232, 255));
+            profitTable.setSelectionForeground(new Color(20, 36, 72));
+            profitTable.setGridColor(new Color(231, 236, 246));
+            profitTable.setShowVerticalLines(false);
+            profitTable.setIntercellSpacing(new Dimension(0, 1));
+            JTableHeader headerTable = profitTable.getTableHeader();
+            headerTable.setBackground(new Color(230, 238, 255));
+            headerTable.setForeground(new Color(23, 44, 94));
+            headerTable.setFont(new Font("Segoe UI", Font.BOLD, 13));
+            headerTable.setReorderingAllowed(false);
+
+            JScrollPane scrollPane = new JScrollPane(profitTable);
+            scrollPane.setBorder(new EmptyBorder(0, 18, 18, 18));
+            scrollPane.getViewport().setBackground(Color.WHITE);
+
+            add(header, BorderLayout.NORTH);
+            add(scrollPane, BorderLayout.CENTER);
+        }
+
+        private void refresh() {
+            Integer year = (Integer) cboYear.getSelectedItem();
+            String yearText = year != null ? String.valueOf(year) : "--";
+            lblTitle.setText("Profit summary in " + yearText);
+            lblHint.setText(
+                    "Revenue: " + formatMoney(currentProfitReport.getTotalRevenue()) +
+                            " | Salary: " + formatMoney(currentProfitReport.getTotalSalaryExpense()) +
+                            " | Profit: " + formatMoney(currentProfitReport.getTotalProfit())
+            );
+
+            profitModel.setRowCount(0);
+            for (MonthlyProfitDTO item : currentProfitReport.getMonthlyProfits()) {
+                profitModel.addRow(new Object[]{
+                        "Month " + item.getMonth(),
+                        formatMoney(item.getRevenue()),
+                        formatMoney(item.getSalaryExpense()),
+                        formatMoney(item.getProfit()),
+                        item.getInvoiceCount()
+                });
+            }
+        }
+    }
+
+    private class ProfitChartFrame extends JFrame {
+        private final JLabel lblTitle = new JLabel();
+        private final JLabel lblHint = new JLabel();
+        private final ProfitBarChartPanel profitBarChartPanel = new ProfitBarChartPanel();
+
+        private ProfitChartFrame() {
+            super("12-Month Profit Chart");
+            setDefaultCloseOperation(WindowConstants.HIDE_ON_CLOSE);
+            setSize(980, 560);
+            setMinimumSize(new Dimension(840, 460));
+            setLayout(new BorderLayout(0, 14));
+            getContentPane().setBackground(new Color(245, 248, 255));
+
+            JPanel header = new JPanel();
+            header.setOpaque(false);
+            header.setBorder(new EmptyBorder(16, 18, 0, 18));
+            header.setLayout(new BoxLayout(header, BoxLayout.Y_AXIS));
+            lblTitle.setForeground(new Color(17, 37, 83));
+            lblTitle.setFont(new Font("Segoe UI", Font.BOLD, 24));
+            lblHint.setForeground(new Color(95, 109, 148));
+            lblHint.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+            header.add(lblTitle);
+            header.add(Box.createVerticalStrut(4));
+            header.add(lblHint);
+
+            profitBarChartPanel.setBorder(new EmptyBorder(0, 18, 18, 18));
+
+            add(header, BorderLayout.NORTH);
+            add(profitBarChartPanel, BorderLayout.CENTER);
+        }
+
+        private void refresh() {
+            Integer year = (Integer) cboYear.getSelectedItem();
+            String yearText = year != null ? String.valueOf(year) : "--";
+            lblTitle.setText("Profit chart for " + yearText);
+            lblHint.setText("12 columns represent monthly profit after subtracting total employee salaries.");
+            profitBarChartPanel.setData(currentProfitReport.getMonthlyProfits(), selectedMonth);
+        }
+    }
+
     private static class MonthlyPieChartPanel extends JPanel {
         private static final Color[] COLORS = {
                 new Color(72, 119, 255), new Color(80, 181, 255), new Color(74, 214, 201),
@@ -659,6 +893,109 @@ public class ReportPanel extends JPanel {
             g2.drawString(text, tx, ty);
         }
     }
+
+    private class ProfitBarChartPanel extends JPanel {
+        private List<MonthlyProfitDTO> data = new ArrayList<>();
+        private int highlightedMonth = 1;
+
+        private ProfitBarChartPanel() {
+            setOpaque(false);
+        }
+
+        private void setData(List<MonthlyProfitDTO> data, int highlightedMonth) {
+            this.data = data != null ? data : new ArrayList<>();
+            this.highlightedMonth = highlightedMonth;
+            repaint();
+        }
+
+        @Override
+        protected void paintComponent(Graphics g) {
+            super.paintComponent(g);
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            g2.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+
+            int width = getWidth();
+            int height = getHeight();
+            int left = 70;
+            int right = 30;
+            int top = 30;
+            int bottom = 60;
+            int chartWidth = Math.max(1, width - left - right);
+            int chartHeight = Math.max(1, height - top - bottom);
+
+            g2.setColor(Color.WHITE);
+            g2.fillRoundRect(left - 24, top - 16, chartWidth + 36, chartHeight + 24, 24, 24);
+
+            BigDecimal maxAbsProfit = data.stream()
+                    .map(MonthlyProfitDTO::getProfit)
+                    .map(BigDecimal::abs)
+                    .max(BigDecimal::compareTo)
+                    .orElse(BigDecimal.ONE);
+            if (maxAbsProfit.compareTo(BigDecimal.ZERO) == 0) {
+                maxAbsProfit = BigDecimal.ONE;
+            }
+
+            int zeroY = top + chartHeight / 2;
+            g2.setColor(new Color(205, 214, 235));
+            g2.setStroke(new BasicStroke(2f));
+            g2.drawLine(left, zeroY, left + chartWidth, zeroY);
+
+            g2.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+            g2.setColor(new Color(95, 109, 148));
+            g2.drawString("0", 50, zeroY + 5);
+
+            int barWidth = Math.max(18, chartWidth / 18);
+            int gap = Math.max(10, (chartWidth - (barWidth * 12)) / 11);
+            int totalBarsWidth = (barWidth * 12) + (gap * 11);
+            int startX = left + Math.max(0, (chartWidth - totalBarsWidth) / 2);
+
+            for (int i = 0; i < data.size() && i < 12; i++) {
+                MonthlyProfitDTO item = data.get(i);
+                double ratio = item.getProfit().abs().divide(maxAbsProfit, 4, RoundingMode.HALF_UP).doubleValue();
+                int barHeight = (int) Math.round(ratio * (chartHeight / 2.0 - 20));
+                int x = startX + (i * (barWidth + gap));
+                boolean positive = item.getProfit().compareTo(BigDecimal.ZERO) >= 0;
+                int y = positive ? zeroY - barHeight : zeroY;
+
+                Color fill = item.getMonth() == highlightedMonth
+                        ? (positive ? new Color(67, 124, 255) : new Color(255, 111, 111))
+                        : (positive ? new Color(120, 163, 255) : new Color(255, 166, 166));
+
+                g2.setColor(fill);
+                g2.fillRoundRect(x, y, barWidth, Math.max(barHeight, 4), 12, 12);
+
+                g2.setColor(new Color(17, 37, 83));
+                g2.setFont(new Font("Segoe UI", item.getMonth() == highlightedMonth ? Font.BOLD : Font.PLAIN, 12));
+                String label = "T" + item.getMonth();
+                FontMetrics metrics = g2.getFontMetrics();
+                g2.drawString(label, x + (barWidth - metrics.stringWidth(label)) / 2, top + chartHeight + 24);
+
+                String value = shortMoney(item.getProfit());
+                FontMetrics valueMetrics = g2.getFontMetrics();
+                int valueY = positive ? y - 8 : y + Math.max(barHeight, 4) + 18;
+                g2.setColor(new Color(95, 109, 148));
+                g2.drawString(value, x + (barWidth - valueMetrics.stringWidth(value)) / 2, valueY);
+            }
+
+            g2.dispose();
+        }
+
+        private String shortMoney(BigDecimal value) {
+            BigDecimal amount = value != null ? value : BigDecimal.ZERO;
+            BigDecimal billion = BigDecimal.valueOf(1_000_000_000L);
+            BigDecimal million = BigDecimal.valueOf(1_000_000L);
+
+            if (amount.abs().compareTo(billion) >= 0) {
+                return amount.divide(billion, 1, RoundingMode.HALF_UP) + "B";
+            }
+            if (amount.abs().compareTo(million) >= 0) {
+                return amount.divide(million, 1, RoundingMode.HALF_UP) + "M";
+            }
+            return amount.divide(BigDecimal.valueOf(1000), 0, RoundingMode.HALF_UP) + "K";
+        }
+    }
+
     public void refreshData() {
         loadYears();
         reloadSelectedYear();

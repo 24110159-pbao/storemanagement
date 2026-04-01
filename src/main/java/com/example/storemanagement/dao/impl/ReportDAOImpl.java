@@ -3,12 +3,15 @@ package com.example.storemanagement.dao.impl;
 import com.example.storemanagement.config.JpaUtil;
 import com.example.storemanagement.dao.ReportDAO;
 import com.example.storemanagement.model.dto.CustomerInvoiceDetailDTO;
+import com.example.storemanagement.model.dto.MonthlyProfitDTO;
+import com.example.storemanagement.model.dto.ProfitReportDTO;
 import com.example.storemanagement.model.dto.RevenueDTO;
 import com.example.storemanagement.model.dto.TopCustomerDTO;
 import com.example.storemanagement.model.dto.YearStatisticsDTO;
 import jakarta.persistence.EntityManager;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.List;
 
 public class ReportDAOImpl implements ReportDAO {
@@ -62,6 +65,58 @@ public class ReportDAOImpl implements ReportDAO {
                             "order by month(i.invoiceDate)",
                     RevenueDTO.class
             ).setParameter("year", year).getResultList();
+        } finally {
+            em.close();
+        }
+    }
+
+    @Override
+    public ProfitReportDTO findProfitReportByYear(int year) {
+        EntityManager em = JpaUtil.getEntityManager();
+        try {
+            BigDecimal monthlySalary = em.createQuery(
+                    "select coalesce(sum(e.salary), 0) from Employee e",
+                    BigDecimal.class
+            ).getSingleResult();
+
+            List<RevenueDTO> revenues = em.createQuery(
+                    "select new com.example.storemanagement.model.dto.RevenueDTO(" +
+                            "month(i.invoiceDate), sum(i.totalAmount), count(i)) " +
+                            "from Invoice i " +
+                            "where year(i.invoiceDate) = :year " +
+                            "group by month(i.invoiceDate) " +
+                            "order by month(i.invoiceDate)",
+                    RevenueDTO.class
+            ).setParameter("year", year).getResultList();
+
+            ProfitReportDTO dto = new ProfitReportDTO(year);
+            List<MonthlyProfitDTO> monthlyProfits = new ArrayList<>();
+
+            for (int month = 1; month <= 12; month++) {
+                int currentMonth = month;
+                RevenueDTO revenue = revenues.stream()
+                        .filter(item -> item.getMonth() == currentMonth)
+                        .findFirst()
+                        .orElse(new RevenueDTO(currentMonth, BigDecimal.ZERO, 0));
+                monthlyProfits.add(new MonthlyProfitDTO(
+                        currentMonth,
+                        revenue.getRevenue(),
+                        monthlySalary,
+                        revenue.getInvoiceCount()
+                ));
+            }
+
+            dto.setMonthlyProfits(monthlyProfits);
+            dto.setTotalRevenue(monthlyProfits.stream()
+                    .map(MonthlyProfitDTO::getRevenue)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add));
+            dto.setTotalSalaryExpense(monthlyProfits.stream()
+                    .map(MonthlyProfitDTO::getSalaryExpense)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add));
+            dto.setTotalProfit(monthlyProfits.stream()
+                    .map(MonthlyProfitDTO::getProfit)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add));
+            return dto;
         } finally {
             em.close();
         }

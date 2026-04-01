@@ -58,33 +58,30 @@ public class ProductDAOImpl implements ProductDAO {
         em.close();
         return list;
     }
-    @Override
     public List<ProductStockDTO> getProductStockByBranch(Integer branchId) {
         EntityManager em = JpaUtil.getEntityManager();
-        List<ProductStockDTO> list;
-
         try {
-            String jpql = "SELECT new com.example.storemanagement.model.dto.ProductStockDTO(" +
-                    "p.productID, p.productName, p.unitPrice, COALESCE(SUM(b.quantity),0)) " +
-                    "FROM Product p LEFT JOIN Batch b ON p.productID = b.product.productID ";
+            StringBuilder jpql = new StringBuilder(
+                    "SELECT new com.example.storemanagement.model.dto.ProductStockDTO(" +
+                            "p.productID, p.productName, p.unitPrice, COALESCE(SUM(b.quantity), 0)) " +
+                            "FROM Product p LEFT JOIN p.batches b "
+            );
 
             if (branchId != null) {
-                jpql += "WHERE b.branch.branchID = :branchId ";
+                jpql.append("WHERE b.branch.branchID = :branchId ");
             }
 
-            jpql += "GROUP BY p.productID, p.productName, p.unitPrice";
+            jpql.append("GROUP BY p.productID, p.productName, p.unitPrice");
 
-            TypedQuery<ProductStockDTO> query = em.createQuery(jpql, ProductStockDTO.class);
+            TypedQuery<ProductStockDTO> query = em.createQuery(jpql.toString(), ProductStockDTO.class);
 
             if (branchId != null) {
                 query.setParameter("branchId", branchId);
             }
 
-            list = query.getResultList();
+            return query.getResultList();
         } finally {
             em.close();
         }
-
-        return list;
     }
 }
