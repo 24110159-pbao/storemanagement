@@ -3,14 +3,18 @@ package com.example.storemanagement.model.dto;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
+/**
+ * DTO thông tin khách hàng top mua nhiều nhất.
+ * Dùng cho dashboard hoặc báo cáo CRM.
+ */
 public class TopCustomerDTO {
 
-    private final Integer customerId;
-    private final String customerName;
-    private final String phone;
-    private final long invoiceCount;
-    private final BigDecimal totalSpent;
-    private final LocalDate lastPurchaseDate;
+    private final Integer customerId;       // ID khách
+    private final String customerName;      // Tên khách
+    private final String phone;             // SĐT
+    private final long invoiceCount;        // Số hóa đơn
+    private final BigDecimal totalSpent;    // Tổng chi tiêu
+    private final LocalDate lastPurchaseDate; // Ngày mua gần nhất
 
     public TopCustomerDTO(Integer customerId,
                           String customerName,

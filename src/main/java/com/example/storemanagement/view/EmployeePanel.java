@@ -251,7 +251,14 @@ public class EmployeePanel extends JPanel {
         try {
             Branch b = (Branch) cbBranch.getSelectedItem();
             if (b == null) { JOptionPane.showMessageDialog(this, "Please select a branch!"); return; }
-            controller.addEmployee(txtName.getText(), txtPosition.getText(), Double.parseDouble(txtSalary.getText()), b.getBranchID());
+            double salary = Double.parseDouble(txtSalary.getText());
+
+            if (salary < 0) {
+                JOptionPane.showMessageDialog(this, "Salary cannot be negative!");
+                return;
+            }
+
+            controller.addEmployee(txtName.getText(), txtPosition.getText(), salary, b.getBranchID());
             loadData();
             clear();
         } catch (Exception ex) { JOptionPane.showMessageDialog(this, "Invalid input!"); }

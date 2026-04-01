@@ -244,7 +244,25 @@ public class ProductPanel extends JPanel {
         try {
             Category c = (Category) cbCategory.getSelectedItem();
             if (c == null) { JOptionPane.showMessageDialog(this, "Please select category!"); return; }
-            controller.add(txtName.getText(), Double.parseDouble(txtPrice.getText()), c.getCategoryID());
+            if (txtPrice.getText().trim().isEmpty()) {
+                JOptionPane.showMessageDialog(this, "Price is required!");
+                return;
+            }
+
+            double price;
+            try {
+                price = Double.parseDouble(txtPrice.getText());
+            } catch (NumberFormatException e) {
+                JOptionPane.showMessageDialog(this, "Price must be a number!");
+                return;
+            }
+
+            if (price < 0) {
+                JOptionPane.showMessageDialog(this, "Price cannot be negative!");
+                return;
+            }
+
+            controller.add(txtName.getText(), price, c.getCategoryID());
             loadData();
             clear();
         } catch (Exception ex) { JOptionPane.showMessageDialog(this, "Invalid input!"); }

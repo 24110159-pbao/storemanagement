@@ -18,6 +18,10 @@ import java.util.ArrayList;
 import java.util.List;
 import org.jdesktop.swingx.autocomplete.AutoCompleteDecorator;
 
+/**
+ * JPanel tạo hóa đơn mới.
+ * Cho phép chọn Customer, Employee, Branch, thêm Products, tính tổng, và xuất PDF.
+ */
 public class CreateInvoiecPanel extends JPanel {
 
     // ===== COLORS =====
@@ -28,6 +32,7 @@ public class CreateInvoiecPanel extends JPanel {
     private final Color BTN_DELETE = new Color(220, 53, 69);
     private final Color BTN_CREATE = new Color(255, 133, 27);
 
+    // ===== UI COMPONENTS =====
     private JComboBox<Customer> cbCustomer;
     private JComboBox<Employee> cbEmployee;
     private JComboBox<Branch> cbBranch;
@@ -35,18 +40,23 @@ public class CreateInvoiecPanel extends JPanel {
 
     private JTextField txtQuantity;
     private JLabel lblTotal;
-
     private JTable table;
-
     private DefaultTableModel model;
 
+    // ===== CONTROLLER =====
     private InvoiceController controller = new InvoiceController();
 
     public CreateInvoiecPanel() {
         setLayout(new BorderLayout(10, 10));
         setBackground(LIGHT_BG);
 
-        // ===== TOP =====
+        initTopPanel();
+        initTable();
+        initBottomPanel();
+    }
+
+    // ===== INIT TOP PANEL (ComboBox + Labels) =====
+    private void initTopPanel() {
         JPanel top = new JPanel(new GridLayout(2, 4, 10, 10));
         top.setBackground(PRIMARY);
         top.setBorder(BorderFactory.createTitledBorder(
@@ -67,51 +77,40 @@ public class CreateInvoiecPanel extends JPanel {
         cbBranch.setSelectedIndex(-1);
         cbProduct.setSelectedIndex(-1);
 
-        // bật autocomplete
+        // Bật autocomplete
         AutoCompleteDecorator.decorate(cbCustomer);
         AutoCompleteDecorator.decorate(cbEmployee);
         AutoCompleteDecorator.decorate(cbBranch);
         AutoCompleteDecorator.decorate(cbProduct);
 
-        JLabel lb1 = new JLabel("Customer");
-        JLabel lb2 = new JLabel("Employee");
-        JLabel lb3 = new JLabel("Branch");
-        JLabel lb4 = new JLabel("Product");
+        JLabel[] labels = {
+                new JLabel("Customer"),
+                new JLabel("Employee"),
+                new JLabel("Branch"),
+                new JLabel("Product")
+        };
 
-        lb1.setForeground(Color.WHITE);
-        lb2.setForeground(Color.WHITE);
-        lb3.setForeground(Color.WHITE);
-        lb4.setForeground(Color.WHITE);
+        for (JLabel lb : labels) lb.setForeground(Color.WHITE);
 
-        top.add(lb1);
-        top.add(lb2);
-        top.add(lb3);
-        top.add(lb4);
+        top.add(labels[0]); top.add(labels[1]);
+        top.add(labels[2]); top.add(labels[3]);
 
-        top.add(cbCustomer);
-        top.add(cbEmployee);
-        top.add(cbBranch);
-        top.add(cbProduct);
+        top.add(cbCustomer); top.add(cbEmployee);
+        top.add(cbBranch); top.add(cbProduct);
 
         add(top, BorderLayout.NORTH);
+    }
 
-        // ===== TABLE (READ-ONLY) =====
-        model = new DefaultTableModel(
-                new String[]{"Product", "Qty", "Price", "Total"}, 0
-        ) {
+    // ===== INIT TABLE =====
+    private void initTable() {
+        model = new DefaultTableModel(new String[]{"Product", "Qty", "Price", "Total"}, 0) {
             @Override
-            public boolean isCellEditable(int row, int column) {
-                return false; // ❌ KHÔNG cho sửa
-            }
+            public boolean isCellEditable(int row, int column) { return false; }
         };
 
         table = new JTable(model);
-        // ❌ không kéo giãn cột
         table.getTableHeader().setResizingAllowed(false);
-
-        // ❌ không đổi vị trí cột
         table.getTableHeader().setReorderingAllowed(false);
-
         table.setRowHeight(25);
         table.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         table.setGridColor(Color.LIGHT_GRAY);
@@ -122,8 +121,10 @@ public class CreateInvoiecPanel extends JPanel {
         table.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 14));
 
         add(new JScrollPane(table), BorderLayout.CENTER);
+    }
 
-        // ===== BOTTOM =====
+    // ===== INIT BOTTOM PANEL (Buttons + Quantity + Total) =====
+    private void initBottomPanel() {
         JPanel bottom = new JPanel();
         bottom.setBackground(LIGHT_BG);
 
@@ -151,7 +152,7 @@ public class CreateInvoiecPanel extends JPanel {
         btnCreate.addActionListener(e -> createInvoice());
     }
 
-    // ===== BUTTON STYLE =====
+    // ===== CREATE BUTTON UTILITY =====
     private JButton createButton(String text, Color bg) {
         JButton btn = new JButton(text);
         btn.setBackground(bg);
@@ -162,7 +163,7 @@ public class CreateInvoiecPanel extends JPanel {
         return btn;
     }
 
-    // ===== LOAD DATA =====
+    // ===== LOAD DATA FROM DB =====
     private Customer[] loadCustomers() {
         EntityManager em = JpaUtil.getEntityManager();
         List<Customer> list = em.createQuery("FROM Customer", Customer.class).getResultList();
@@ -191,33 +192,19 @@ public class CreateInvoiecPanel extends JPanel {
         return list.toArray(new Product[0]);
     }
 
-    // ===== ADD ITEM =====
+    // ===== ADD ITEM TO TABLE =====
     private void addItem() {
         try {
             Product p = (Product) cbProduct.getSelectedItem();
             Branch b = (Branch) cbBranch.getSelectedItem();
-            if (p == null || b == null) {
-                JOptionPane.showMessageDialog(this, "Chọn Product và Branch!");
-                return;
-            }
+            if (p == null || b == null) { JOptionPane.showMessageDialog(this, "Chọn Product và Branch!"); return; }
             int qty = Integer.parseInt(txtQuantity.getText());
+            if (qty <= 0) { JOptionPane.showMessageDialog(this, "Quantity phải > 0"); return; }
 
-            if (qty <= 0) {
-                JOptionPane.showMessageDialog(this, "Quantity phải > 0");
-                return;
-            }
-
-            boolean ok = controller.checkStock(
-                    b.getBranchID().longValue(),
-                    Long.valueOf(p.getProductID()),
-                    qty
-            );
-
+            boolean ok = controller.checkStock(b.getBranchID().longValue(),
+                    Long.valueOf(p.getProductID()), qty);
             if (!ok) {
-                JOptionPane.showMessageDialog(this,
-                        "Không đủ hàng tại chi nhánh này!",
-                        "Cảnh báo",
-                        JOptionPane.WARNING_MESSAGE);
+                JOptionPane.showMessageDialog(this, "Không đủ hàng tại chi nhánh!", "Cảnh báo", JOptionPane.WARNING_MESSAGE);
                 return;
             }
 
@@ -225,7 +212,6 @@ public class CreateInvoiecPanel extends JPanel {
             BigDecimal total = price.multiply(BigDecimal.valueOf(qty));
 
             model.addRow(new Object[]{p, qty, price, total});
-
             updateTotal();
             txtQuantity.setText("");
 
@@ -234,38 +220,27 @@ public class CreateInvoiecPanel extends JPanel {
         }
     }
 
-    // ===== REMOVE =====
+    // ===== REMOVE ITEM =====
     private void removeItem() {
         int row = table.getSelectedRow();
-
-        if (row == -1) {
-            JOptionPane.showMessageDialog(this, "Chọn dòng để xóa!");
-            return;
-        }
-
+        if (row == -1) { JOptionPane.showMessageDialog(this, "Chọn dòng để xóa!"); return; }
         model.removeRow(row);
         updateTotal();
     }
 
-    // ===== TOTAL =====
+    // ===== UPDATE TOTAL =====
     private void updateTotal() {
         BigDecimal sum = BigDecimal.ZERO;
-
         for (int i = 0; i < model.getRowCount(); i++) {
-            BigDecimal t = (BigDecimal) model.getValueAt(i, 3);
-            sum = sum.add(t);
+            sum = sum.add((BigDecimal) model.getValueAt(i, 3));
         }
-
         lblTotal.setText("Total: " + sum);
     }
 
     // ===== CREATE INVOICE =====
     private void createInvoice() {
         try {
-            if (model.getRowCount() == 0) {
-                JOptionPane.showMessageDialog(this, "Chưa có sản phẩm!");
-                return;
-            }
+            if (model.getRowCount() == 0) { JOptionPane.showMessageDialog(this, "Chưa có sản phẩm!"); return; }
 
             Customer c = (Customer) cbCustomer.getSelectedItem();
             Employee e = (Employee) cbEmployee.getSelectedItem();
@@ -278,41 +253,29 @@ public class CreateInvoiecPanel extends JPanel {
             dto.setInvoiceDate(LocalDate.now());
 
             List<InvoiceItemDTO> items = new ArrayList<>();
-
             for (int i = 0; i < model.getRowCount(); i++) {
                 Product p = (Product) model.getValueAt(i, 0);
                 int qty = (int) model.getValueAt(i, 1);
                 BigDecimal price = (BigDecimal) model.getValueAt(i, 2);
-
-                items.add(new InvoiceItemDTO(
-                        p.getProductID(),
-                        qty,
-                        price.doubleValue()
-                ));
+                items.add(new InvoiceItemDTO(p.getProductID(), qty, price.doubleValue()));
             }
-
             dto.setItems(items);
 
             controller.createInvoice(dto);
-
             String filePath = "invoice_" + System.currentTimeMillis() + ".pdf";
             PdfGenerator.exportInvoice(dto, filePath);
 
-            JOptionPane.showMessageDialog(this,
-                    "Tạo hóa đơn thành công!\nPDF: " + filePath);
-
+            JOptionPane.showMessageDialog(this, "Tạo hóa đơn thành công!\nPDF: " + filePath);
             model.setRowCount(0);
             updateTotal();
 
         } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this,
-                    "Lỗi: " + ex.getMessage(),
-                    "Error",
-                    JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Lỗi: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
-    public void refreshData() {
 
+    // ===== REFRESH DATA =====
+    public void refreshData() {
         cbCustomer.setModel(new DefaultComboBoxModel<>(loadCustomers()));
         cbEmployee.setModel(new DefaultComboBoxModel<>(loadEmployees()));
         cbBranch.setModel(new DefaultComboBoxModel<>(loadBranches()));
